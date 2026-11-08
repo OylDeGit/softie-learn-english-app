@@ -544,3 +544,32 @@ body[data-question-type="sentence"] .candidate-speech .speaker-btn { width: 100%
 .speech-word { overflow-wrap: anywhere; min-width: 0; }
 .candidate-speech .speaker-icon { flex-shrink: 0; }
 .gt-badge { display: inline-block; margin: 10px 0 0; padding: 5px 10px; border: 1px solid #b7c8dd; border-radius: 999px; background: #edf3ff; color: #375781; font-size: 10px; font-weight: 750; letter-spacing: .5px; }
+
+/* Larger word bank: explicit mode coverage and a paginated, searchable wordbook. */
+.mode-coverage { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: #e9f1ff; color: #35516f; font-size: 12px; font-weight: 750; }
+.wordbook-open { width: 100%; margin: 12px 0 4px; padding: 12px; border: 2px solid var(--ink); border-radius: 12px; background: #fffaf0; font-size: 13px; font-weight: 800; }
+#word-phonetic { font-size: 12px; color: #756778; font-weight: 500; overflow-wrap: anywhere; }
+.word-source { font-size: 11px; line-height: 1.6; color: #7a7080; margin: 8px 0 12px; }
+.wordbook-dialog { width: min(680px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); padding: 18px; border: 3px solid var(--ink); border-radius: 20px; background: #fffcf5; color: var(--ink); overflow-y: auto; }
+.wordbook-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wordbook-head h2 { font-size: 22px; }
+.wordbook-head button { width: 40px; height: 40px; background: #fff; border: 2px solid var(--ink); border-radius: 50%; flex-shrink: 0; }
+.wordbook-summary { font-size: 12px; color: #6f6574; line-height: 1.7; margin: 8px 0; }
+#wordbook-search { width: 100%; min-width: 0; padding: 11px 12px; font: inherit; font-size: 14px; border: 2px solid #ac9cb2; border-radius: 10px; background: #fff; color: var(--ink); }
+.wordbook-filters { display: flex; gap: 10px; margin-top: 10px; }
+.wordbook-filters label { flex: 1; min-width: 0; font-size: 12px; }
+.wordbook-filters select { display: block; width: 100%; margin-top: 5px; padding: 8px; font: inherit; background: #fff; border: 1px solid #b8aabd; border-radius: 8px; color: var(--ink); }
+.wordbook-list { list-style: none; padding: 0; margin: 0; max-height: 48dvh; overflow-y: auto; overscroll-behavior: contain; }
+.wordbook-item { padding: 12px 4px; border-top: 1px solid #e2d8e4; overflow-wrap: anywhere; }
+.wordbook-word { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.wordbook-word strong { font-size: 18px; }
+.wordbook-word span { font-size: 12px; color: #7a6d7d; }
+.wordbook-word button { padding: 4px 9px; min-height: 32px; background: #eef4ff; border: 1px solid #96acd3; border-radius: 8px; font-size: 12px; }
+.wordbook-item p { margin: 5px 0; font-size: 14px; line-height: 1.65; }
+.wordbook-item small { font-size: 10px; color: #7e7083; }
+.wordbook-collocation { color: #27734c; }
+.wordbook-empty { padding: 30px 8px; font-size: 13px; }
+.wordbook-pagination { display: flex; gap: 12px; margin: 12px 0; }
+.wordbook-pagination button { flex: 1; min-height: 40px; border: 1px solid #a193a8; border-radius: 10px; background: #eee8f6; font-size: 13px; }
+.wordbook-source { font-size: 10px; line-height: 1.6; color: #7a7080; }
+.wordbook-dialog select:focus-visible, .wordbook-dialog button:focus-visible, .wordbook-open:focus-visible { outline: 3px solid #456de0; outline-offset: 3px; }

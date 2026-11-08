@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TOPICS } from '../js/content/vocabulary.js';
-import { MODES, saveKey } from '../js/modes.js';
+import { MODES, WORD_BANK, saveKey } from '../js/modes.js';
 import { makeRound } from '../js/idioms.js';
 import { freshSave, loadSave, resetAllSaves } from '../js/storage.js';
 import { createApp } from './helpers/app-harness.mjs';
 
 test('every GT topic supports unique eight-question rounds at every level and in every mode', () => {
-  for (const mode of Object.values(MODES)) for (const topic of TOPICS) for (const level of mode.levels) {
+  for (const mode of Object.values(MODES)) for (const topic of new Set(mode.questions.map(q => q.topic))) for (const level of mode.levels) {
     const round = makeRound(level.id, { mode, topic });
     assert.equal(round.length, 8);
     assert.equal(new Set(round.map(q => q.id)).size, 8);
@@ -15,7 +15,7 @@ test('every GT topic supports unique eight-question rounds at every level and in
     const next = makeRound(level.id, { mode, topic, seen: round.map(q => q.id) });
     assert.equal(next.length, 8);
     assert.equal(new Set(next.map(q => q.id)).size, 8);
-    assert.equal(next.filter(q => !round.some(previous => previous.id === q.id)).length, 2);
+    assert.equal(next.filter(q => !round.some(previous => previous.id === q.id)).length, Math.min(3, mode.questions.filter(q => q.level === level.id && q.topic === topic).length - 8));
   }
 });
 
@@ -23,15 +23,16 @@ test('topic control filters level rounds and progress while placement covers all
   for (const mode of Object.values(MODES)) {
     const f = createApp({ mode: mode.id });
     f.$('#topic-select').value = TOPICS[1]; f.$('#topic-select').change();
-    assert.match(f.$('#home-progress').textContent, /0 \/ 30 词/);
+    const total = mode.questions.filter(q => q.topic === TOPICS[1]).length;
+    assert.ok(f.$('#home-progress').textContent.includes(`0 / ${total} 词`));
     assert.equal(f.localStorage.getItem('softie-ielts-gt:topic'), TOPICS[1]);
     f.app.start('level', 2);
     assert.ok(f.app.scene.questions.every(q => q.topic === TOPICS[1]));
     await f.round();
     f.app.home();
-    assert.match(f.$('#home-progress').textContent, /8 \/ 30 词/);
+    assert.ok(f.$('#home-progress').textContent.includes(`8 / ${total} 词`));
     f.$('#topic-select').value = TOPICS[0]; f.$('#topic-select').change();
-    assert.match(f.$('#home-progress').textContent, /0 \/ 30 词/);
+    assert.ok(f.$('#home-progress').textContent.includes(`0 / ${mode.questions.filter(q => q.topic === TOPICS[0]).length} 词`));
     f.app.start('placement');
     assert.deepEqual(Array.from(f.app.scene.questions, q => q.level), [1, 1, 2, 2, 3, 3]);
   }
@@ -60,10 +61,16 @@ test('answered cards teach word class, bilingual collocations and General Traini
     assert.equal(f.$('#explanation').hidden, true);
     await f.answer();
     assert.equal(f.$('#meaning').textContent, `${q.pos} ${q.meaning}`);
-    assert.ok(f.$('#collocation').textContent.includes(q.collocation));
-    assert.ok(f.$('#collocation').textContent.includes(q.collocationMeaning));
-    assert.ok(f.$('#example').textContent.includes(q.context.replace('____', q.word)));
-    assert.ok(f.$('#use-case').textContent.includes(q.useCase));
+    if (q.context) {
+      assert.ok(f.$('#collocation').textContent.includes(q.collocation));
+      assert.ok(f.$('#collocation').textContent.includes(q.collocationMeaning));
+      assert.ok(f.$('#example').textContent.includes(q.context.replace('____', q.word)));
+      assert.ok(f.$('#use-case').textContent.includes(q.useCase));
+    } else {
+      assert.equal(f.$('#usage-card').hidden, true);
+      assert.ok(f.$('#word-source').textContent.includes('ECDICT'));
+      assert.ok(!f.$('#example').textContent.includes('undefined'));
+    }
   }
 });
 

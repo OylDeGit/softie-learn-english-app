@@ -5,6 +5,7 @@ export const partsFor = q => q.parts || [...q.word];
 export const answerAt = (q, step) => partsFor(q)[q.blanks[step]];
 const LETTERS = [...'abcdefghijklmnopqrstuvwxyz'];
 const SIMILAR = { a: 'eoi', e: 'aio', i: 'ely', o: 'auc', u: 'voa', b: 'dpq', d: 'bpq', p: 'bqd', q: 'pgb', m: 'nwr', n: 'mhr' };
+const wordSets = new WeakMap();
 
 export function shuffle(items, rng = Math.random) {
   const out = [...items];
@@ -19,7 +20,9 @@ export function optionsFor(q, step, rng = Math.random, mode = DEFAULT_MODE) {
     const index = q.blanks[step];
     candidates = [...new Set([...(SIMILAR[answer] || ''), ...shuffle(LETTERS, rng)])].filter(c => c !== answer);
     // Avoid an alternative valid bank word for the same visible spelling.
-    candidates = candidates.filter(c => !mode.questions.some(other => other.word === q.word.slice(0, index) + c + q.word.slice(index + 1)));
+    let words = wordSets.get(mode.questions);
+    if (!words) { words = new Set(mode.questions.map(other => other.word)); wordSets.set(mode.questions, words); }
+    candidates = candidates.filter(c => !words.has(q.word.slice(0, index) + c + q.word.slice(index + 1)));
   } else candidates = [...new Set(q.distractors)].filter(word => word !== answer);
   return shuffle([answer, ...candidates.slice(0, 3)], rng);
 }

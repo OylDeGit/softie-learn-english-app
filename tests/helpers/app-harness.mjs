@@ -8,6 +8,7 @@ import * as trophies from '../../js/trophies.js';
 import * as choreography from '../../js/choreography.js';
 import * as timer from '../../js/timer.js';
 import { SpeechReader } from '../../js/speech.js';
+import { searchWordbook } from '../../js/wordbook.js';
 
 // Execute the complete application with its real data/gameplay modules. Only
 // browser rendering, audio and the clock are replaced; no production hooks.
@@ -89,7 +90,7 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     }); }
   }
   const context = vm.createContext({
-    ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer,
+    ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, searchWordbook,
     dayKey: (d = new FakeDate()) => storage.dayKey(d),
     currentStreak: (history, nc, today = new FakeDate()) => storage.currentStreak(history, nc, today),
     hammerOffer: (calendar, history, today = new FakeDate()) => storage.hammerOffer(calendar, history, today),

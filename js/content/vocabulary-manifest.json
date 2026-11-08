@@ -1,0 +1,22 @@
+{
+  "source": "skywind3000/ECDICT",
+  "revision": "39cfb9672c0906b63569e0453c2e6abfb9ab182a",
+  "sourceSha256": "d1ecbdf9ee2b920afb6f430ca6b6bb9f559588cf0dff86e04bd255f9390843cc",
+  "total": 3000,
+  "authored": 180,
+  "dictionary": 2820,
+  "levels": {
+    "1": 1000,
+    "2": 1000,
+    "3": 1000
+  },
+  "topics": {
+    "生活与住房": 90,
+    "工作与职业": 178,
+    "出行与服务": 96,
+    "健康与习惯": 131,
+    "社区与环境": 156,
+    "学习与沟通": 196,
+    "通用表达": 2153
+  }
+}

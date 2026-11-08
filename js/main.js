@@ -4,7 +4,8 @@ import { AudioEngine } from './audio.js';
 import { FX } from './fx.js';
 import { Backdrop } from './bg.js';
 import { mountSofties, softieSVG, bounce, bubbleHit } from './softie.js';
-import { MODES, getMode, saveKey } from './modes.js';
+import { MODES, WORD_BANK, getMode, saveKey } from './modes.js';
+import { searchWordbook } from './wordbook.js';
 import { makeRound, placementRound, recommendedLevel, optionsFor, recordAnswer, shuffle, answerAt, partsFor } from './idioms.js';
 import { loadSave, persistSave, resetAllSaves, dayKey, currentStreak, bestStreak, hammerOffer, useHammer, playedDays, STICKERS, claimLogin, stickerOn, bonusState } from './storage.js';
 import { ensureDailyQuests, questText, feedQuestEvent, isAllQuestsDone, claimQuestReward } from './quests.js';
@@ -22,7 +23,7 @@ if (!activeModeId) { try { activeModeId = storage?.getItem('softie-ielts-gt:acti
 let mode = getMode(activeModeId);
 let copy = mode.copy;
 let saved = loadSave(storage, mode);
-const topics = [...new Set(mode.questions.map(q => q.topic))];
+const topics = [...new Set(WORD_BANK.map(q => q.topic))];
 let selectedTopic = '';
 try { selectedTopic = storage?.getItem('softie-ielts-gt:topic') || ''; } catch { /* Use all topics. */ }
 if (!topics.includes(selectedTopic)) selectedTopic = '';
@@ -85,7 +86,10 @@ function readQuestion() {
 function readExplanation() {
   const q = activeQuestion();
   if (!q || S.phase !== 'explain') return;
-  return read([{ text: q.word, lang: 'en' }, { text: q.context.replace('____', q.word), lang: 'en' }]);
+  const items = [{ text: q.word, lang: 'en' }];
+  const extra = q.context ? q.context.replace('____', q.word) : q.definition;
+  if (extra) items.push({ text: extra, lang: 'en' });
+  return read(items);
 }
 const timers = new Set();
 let pendingHammer = null;
@@ -632,11 +636,17 @@ function showDayLog(dateStr) {
 }
 
 function refreshHome() {
+  const modeTopics = [...new Set(mode.questions.map(q => q.topic))];
+  if (!modeTopics.includes(selectedTopic)) selectedTopic = '';
+  $('#topic-select').innerHTML = `<option value="">全部话题 · ${mode.questions.length} 词</option>` + modeTopics.map(topic => `<option value="${topic}">${topic} · ${mode.questions.filter(q => q.topic === topic).length} 词</option>`).join('');
+  $('#topic-select').value = selectedTopic;
+  $('#mode-coverage').textContent = `${mode.label} · ${mode.questions.length} 词${mode.id === 'sentence' ? ' · 含原创例句与搭配' : ' · 全词库练习'}`;
+  $('#topic-note').textContent = '各话题按实际收录量显示 · 起点测验覆盖全部话题';
   const visibleQuestions = mode.questions.filter(q => !selectedTopic || q.topic === selectedTopic);
   $('#levels').innerHTML = mode.levels.map((l) => {
     const total = visibleQuestions.filter((q) => q.level === l.id).length;
     const learned = visibleQuestions.filter((q) => q.level === l.id && saved.learned.includes(q.id)).length;
-    return `<button class="level-card${saved.recommended === l.id ? ' recommended' : ''}" data-level="${l.id}"><span class="level-icon" aria-hidden="true">${softieSVG(l.color)}</span><span><strong>${l.name}${saved.recommended === l.id ? '<em>推荐起点</em>' : ''}</strong><small>${l.label}</small></span><span class="level-count" aria-label="本玩法练过 ${learned} 道，共 ${total} 道"><b>${learned}</b> / ${total}</span></button>`;
+    return `<button class="level-card${saved.recommended === l.id ? ' recommended' : ''}" data-level="${l.id}"${total ? '' : ' disabled'}><span class="level-icon" aria-hidden="true">${softieSVG(l.color)}</span><span><strong>${l.name}${saved.recommended === l.id ? '<em>推荐起点</em>' : ''}</strong><small>${total ? l.label : '本话题暂无此层词汇'}</small></span><span class="level-count" aria-label="本玩法练过 ${learned} 道，共 ${total} 道"><b>${learned}</b> / ${total}</span></button>`;
   }).join('');
   $('#start-label').textContent = saved.recommended ? copy.stationStart.replace('{name}', levelInfo(saved.recommended).name) : copy.placement;
   $('#start-note').textContent = saved.recommended ? `${selectedTopic || '全部话题'} · 每轮 ${mode.rules.roundSize} 题` : `先练 ${mode.levels.length * mode.rules.placementPerLevel} 题 · 起点测验覆盖全部话题`;
@@ -920,9 +930,16 @@ function completeQuestion(skipped = false, timedOut = false) {
   $('#read-question').hidden = true;
   $('#answer-word').textContent = q.word; $('#meaning').textContent = `${q.pos} ${q.meaning}`;
   if ($('.explain-heading span')) $('.explain-heading span').textContent = skipped ? (copy.unlearned || '先来认识这个单词') : copy.learned;
-  $('#example').textContent = `${q.context.replace('____', q.word)}\n${q.translation}`;
-  $('#collocation').textContent = `${q.collocation} · ${q.collocationMeaning}`;
-  $('#use-case').textContent = `G 类场景：${q.useCase}`;
+  $('#word-phonetic').textContent = q.phonetic ? `/${q.phonetic}/` : '';
+  $('#word-phonetic').hidden = !q.phonetic;
+  $('#example').textContent = q.context ? `${q.context.replace('____', q.word)}\n${q.translation}` : [q.definition, q.dictionaryMeanings].filter(Boolean).join('\n');
+  $('#usage-card').hidden = !q.collocation;
+  $('#collocation').textContent = q.collocation ? `${q.collocation} · ${q.collocationMeaning}` : '';
+  $('#use-case').textContent = q.useCase ? `G 类场景：${q.useCase}` : '';
+  $('#word-source').textContent = q.source === 'ECDICT' ? 'ECDICT 词典释义 · 该词暂未收录原创语境题' : '原创例句与搭配';
+  const readLabel = q.context ? '朗读单词和例句' : q.definition ? '朗读单词和英文释义' : '朗读单词';
+  $('#read-explanation').setAttribute('aria-label', readLabel);
+  $('#read-explanation').title = readLabel;
   if (!S.demo && saved.settings.autoSpeak) readExplanation();
   $('#next-question').textContent = S.qi === S.questions.length - 1 ? '这一轮完成啦 →' : '记住啦，下一题 →';
   if (!S.demo) $('#next-question').focus({ preventScroll: true });
@@ -1254,8 +1271,38 @@ function initLogoBurst() {
 initLogoBurst();
 
 const modeSelect = $('#mode-select');
-$('#topic-select').innerHTML = '<option value="">全部话题 · 180 词</option>' + topics.map(topic => `<option value="${topic}">${topic} · 30 词</option>`).join('');
-$('#topic-select').value = selectedTopic;
+const escapeText = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+let wordbookPage = 1;
+function renderWordbook() {
+  const result = searchWordbook($('#wordbook-search').value, {
+    topic: $('#wordbook-topic').value, level: Number($('#wordbook-level').value), page: wordbookPage,
+  });
+  wordbookPage = result.page;
+  $('#wordbook-count').textContent = `找到 ${result.total} 词 · 第 ${result.page} / ${result.pages} 页`;
+  $('#wordbook-list').innerHTML = result.items.length ? result.items.map(q => `<li class="wordbook-item">
+    <div class="wordbook-word"><strong>${escapeText(q.word)}</strong><span>${escapeText(q.phonetic ? `/${q.phonetic}/` : '')}</span><button type="button" data-book-speech="${q.word}" aria-label="朗读 ${q.word}">听</button></div>
+    <p>${escapeText(q.pos)} ${escapeText(q.meaning)}</p>
+    ${q.collocation ? `<p class="wordbook-collocation">${escapeText(q.collocation)} · ${escapeText(q.collocationMeaning)}</p>` : ''}
+    <small>${escapeText(levelInfo(q.level).name)} · ${escapeText(q.topic)} · ${escapeText(q.source)}</small>
+  </li>`).join('') : '<li class="wordbook-empty">没有匹配词汇，请换个关键词或筛选条件。</li>';
+  $('#wordbook-prev').disabled = result.page <= 1;
+  $('#wordbook-next').disabled = result.page >= result.pages;
+}
+$('#wordbook-topic').innerHTML = '<option value="">全部话题</option>' + topics.map(topic => `<option value="${topic}">${topic}</option>`).join('');
+$('#open-wordbook').addEventListener('click', () => {
+  wordbookPage = 1; renderWordbook(); $('#wordbook-dialog').showModal(); $('#wordbook-search').focus();
+});
+for (const selector of ['#wordbook-search', '#wordbook-topic', '#wordbook-level']) {
+  $(selector).addEventListener(selector === '#wordbook-search' ? 'input' : 'change', () => { wordbookPage = 1; renderWordbook(); });
+}
+$('#wordbook-prev').addEventListener('click', () => { wordbookPage -= 1; renderWordbook(); $('#wordbook-list').scrollTop = 0; });
+$('#wordbook-next').addEventListener('click', () => { wordbookPage += 1; renderWordbook(); $('#wordbook-list').scrollTop = 0; });
+$('#wordbook-list').addEventListener('click', event => {
+  const button = event.target.closest('[data-book-speech]');
+  if (button && WORD_BANK.some(q => q.word === button.dataset.bookSpeech)) read({ text: button.dataset.bookSpeech, lang: 'en' });
+});
+$('#close-wordbook').addEventListener('click', () => { speech.cancel(); $('#wordbook-dialog').close(); $('#open-wordbook').focus(); });
+$('#wordbook-dialog').addEventListener('cancel', () => speech.cancel());
 $('#topic-select').addEventListener('change', () => {
   const value = $('#topic-select').value;
   selectedTopic = topics.includes(value) ? value : '';

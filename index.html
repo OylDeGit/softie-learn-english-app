@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#fff8ec">
-  <meta name="description" content="雅思 G 类 General Training 词汇练习：180 个精选生活、职场与书信词汇，词义辨析、听音拼写、语境填词，配常用搭配与中英例句。">
+  <meta name="description" content="雅思 G 类备考词库：识义与拼写各 3000 词，原创语境精练 180 词，支持中英文词表搜索、话题练习和错题复习。">
   <title>软乎乎 · 雅思泡泡 · G 类词汇</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg">
   <link rel="stylesheet" href="style.css">
@@ -70,7 +70,7 @@
             <b style="--x:36%;--y:86%;--r:-12deg;--c:#ffd23f">○</b>
           </span>
         </h1>
-        <p class="intro">180 个 G 类精选词 · 生活、职场与书信搭配</p>
+        <p class="intro">3000 词备考词库 · G 类生活、职场与通用表达</p>
         <p class="gt-badge">IELTS GENERAL TRAINING · 目标 6–7 分</p>
         <div class="home-stage" aria-hidden="true">
           <div id="home-softies" class="slime-party"></div>
@@ -168,17 +168,19 @@
           <option value="sentence">情境填词</option>
         </select>
       </div>
+      <p id="mode-coverage" class="mode-coverage">词义辨析 · 3000 词 · 全词库练习</p>
       <div class="topic-filter">
         <label for="topic-select">练习话题</label>
-        <select id="topic-select" aria-describedby="topic-note"><option value="">全部话题 · 180 词</option></select>
+        <select id="topic-select" aria-describedby="topic-note"><option value="">全部话题 · 3000 词</option></select>
       </div>
-      <p id="topic-note" class="topic-note">每话题 30 词 · 每层 10 词 · 起点测验覆盖全部话题</p>
+      <p id="topic-note" class="topic-note">各话题按实际收录量显示 · 起点测验覆盖全部话题</p>
       <div id="levels" class="level-list" aria-label="选择难度"></div>
       <div class="home-actions">
         <button id="start-review" class="sub-btn" disabled>再练一练 <span id="review-count">0</span></button>
         <button id="start-demo" class="sub-btn">泡泡秀演示 <span aria-hidden="true">▷</span></button>
       </div>
 
+      <button id="open-wordbook" class="wordbook-open">查看 / 搜索 3000 词词表</button>
       <p id="home-progress" class="footnote">不用赶时间，答错也没关系。</p>
       <button id="retest" class="quiet-button" hidden>重新测测起点</button>
     </section>
@@ -256,7 +258,7 @@
         <div class="explain-heading">
           <div class="explain-top-row">
             <div class="word-pronounce-row">
-              <b id="answer-word"></b>
+              <b id="answer-word"></b><small id="word-phonetic" hidden></small>
               <button type="button" id="read-explanation" class="speaker-btn icon-only" aria-label="朗读单词和例句" title="朗读单词和例句"><svg class="speaker-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M9 3.5 L4.5 7 H1.5 C1 7 .5 7.5 .5 8 V12 C.5 12.5 1 13 1.5 13 H4.5 L9 16.5 C9.7 17 10.5 16.5 10.5 15.7 V4.3 C10.5 3.5 9.7 3 9 3.5 Z" fill="currentColor"/><path class="speaker-wave" d="M13.5 6.5 C14.8 7.8 14.8 12.2 13.5 13.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path class="speaker-wave" d="M16 4 C18.5 6.5 18.5 13.5 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
             </div>
             <div id="meaning" class="explain-meaning"></div>
@@ -264,7 +266,8 @@
           <span>今天又练了一个单词</span>
         </div>
         <p id="example" class="example"></p>
-        <div class="usage-card"><strong>常用搭配</strong><p id="collocation"></p><small id="use-case"></small></div>
+        <div id="usage-card" class="usage-card"><strong>常用搭配</strong><p id="collocation"></p><small id="use-case"></small></div>
+        <p id="word-source" class="word-source"></p>
         <button id="next-question" class="primary">记住啦，下一题 <span aria-hidden="true">→</span></button>
       </div>
       <p id="tts-note" class="speech-status" role="status" aria-live="polite"></p>
@@ -353,6 +356,21 @@
         class="primary">回到首页</button></div>
   </dialog>
 
+  <dialog id="wordbook-dialog" class="wordbook-dialog" aria-labelledby="wordbook-title">
+    <div class="wordbook-head"><h2 id="wordbook-title">3000 词词表</h2><button type="button" id="close-wordbook" aria-label="关闭词表">✕</button></div>
+    <p class="wordbook-summary">识义 / 拼写 3000 词 · 原创语境精练 180 词</p>
+    <label class="sr-only" for="wordbook-search">搜索英文或中文释义</label>
+    <input id="wordbook-search" type="search" placeholder="搜索单词、中文或搭配，例如 refund / 退款" autocomplete="off">
+    <div class="wordbook-filters">
+      <label>话题<select id="wordbook-topic"><option value="">全部话题</option></select></label>
+      <label>难度<select id="wordbook-level"><option value="0">全部难度</option><option value="1">基础</option><option value="2">核心</option><option value="3">进阶</option></select></label>
+    </div>
+    <p id="wordbook-count" class="wordbook-summary" role="status" aria-live="polite"></p>
+    <ul id="wordbook-list" class="wordbook-list"></ul>
+    <div class="wordbook-pagination"><button type="button" id="wordbook-prev">上一页</button><button type="button" id="wordbook-next">下一页</button></div>
+    <p class="wordbook-source">新增释义与音标来自 ECDICT（MIT）；话题为辅助分类。<a href="VOCABULARY_SOURCES.md" target="_blank" rel="noopener">词库来源</a></p>
+  </dialog>
+
   <dialog id="guide-dialog" class="guide-dialog" aria-labelledby="guide-title">
     <button type="button" class="icon-btn close-dialog-btn" id="close-guide" aria-label="关闭">✕</button>
     <div class="dialog-head">
@@ -362,7 +380,7 @@
       <div class="guide-step">
         <span class="guide-badge">1</span>
         <div><b>选字发射泡泡</b>
-          <p>雅思 G 类词汇：看中文辨词义、听音补字母，或结合中文语境补全句子。答后读例句、记搭配，再尝试用于自己的书信和口语。点击答案，电脑端也可按 1–4。</p>
+          <p>识义与拼写各 3000 词，语境精练 180 词。看中文辨词义、听音补字母，或结合中文语境补全句子。答后查看释义；原创语境词条还可读例句、记搭配。点击答案，电脑端也可按 1–4。</p>
         </div>
       </div>
       <div class="guide-step">

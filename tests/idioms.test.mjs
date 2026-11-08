@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DEFAULT_MODE, MODES, getMode, saveKey } from '../js/modes.js';
 import { optionsFor, makeRound, placementRound, recommendedLevel, recordAnswer, answerAt } from '../js/idioms.js';
 import { freshSave, loadSave, persistSave, resetAllSaves } from '../js/storage.js';
+import { VOCABULARY } from '../js/content/vocabulary.js';
 
 const mode = DEFAULT_MODE;
 const rng = () => .37;
@@ -17,27 +18,34 @@ function memory() {
   };
 }
 
-test('180 GT words generate 540 unique questions, 60 per level and 30 per topic', () => {
+test('3000 words support full-bank meaning/spelling and 180 authored sentence entries', () => {
   assert.deepEqual(Object.keys(MODES), ['meaning', 'spelling', 'sentence']);
   const all = Object.values(MODES).flatMap(mode => mode.questions);
-  assert.equal(all.length, 540);
-  assert.equal(new Set(all.map(q => q.id)).size, 540);
+  assert.equal(all.length, 6180);
+  assert.equal(new Set(all.map(q => q.id)).size, 6180);
   for (const mode of Object.values(MODES)) {
-    assert.equal(mode.questions.length, 180);
-    assert.equal(new Set(mode.questions.map(q => q.word)).size, 180);
-    for (const level of mode.levels) assert.equal(mode.questions.filter(q => q.level === level.id).length, 60);
+    const expected = mode.id === 'sentence' ? 180 : 3000;
+    assert.equal(mode.questions.length, expected);
+    assert.equal(new Set(mode.questions.map(q => q.word)).size, expected);
+    for (const level of mode.levels) assert.equal(mode.questions.filter(q => q.level === level.id).length, expected / 3);
     const topics = new Set(mode.questions.map(q => q.topic));
-    assert.equal(topics.size, 6);
-    for (const topic of topics) assert.equal(mode.questions.filter(q => q.topic === topic).length, 30);
+    assert.equal(topics.size, mode.id === 'sentence' ? 6 : 7);
+    for (const topic of topics) assert.ok(mode.questions.filter(q => q.topic === topic).length >= 30);
     for (const q of mode.questions) {
       assert.equal(q.id, `${mode.id}:word-${q.word}`);
       assert.match(q.word, /^[a-z]{3,16}$/);
-      assert.ok(q.meaning && q.translation && q.pattern && q.pos && q.collocationMeaning && q.useCase);
-      assert.ok(q.collocation.includes(q.word), q.id);
-      assert.ok(q.distractors.every(word => mode.questions.find(other => other.word === word)?.pos === q.pos), q.id);
-      assert.equal(q.context.split('____').length, 2);
-      assert.ok(!q.context.includes(q.word));
-      assert.ok(q.context.replace('____', q.word).split(' ').length <= 20);
+      assert.ok(q.meaning && q.pos && q.source);
+      assert.ok(q.distractors.every(word => VOCABULARY.find(other => other.word === word)?.pos === q.pos), q.id);
+      if (q.context) {
+        assert.ok(q.translation && q.pattern && q.collocationMeaning && q.useCase);
+        assert.ok(q.collocation.includes(q.word), q.id);
+        assert.equal(q.context.split('____').length, 2);
+        assert.ok(!q.context.includes(q.word));
+      } else {
+        assert.equal(q.source, 'ECDICT');
+        assert.ok(q.dictionaryMeanings);
+        assert.notEqual(mode.id, 'sentence');
+      }
       assert.equal(q.blanks.length, mode.id === 'spelling' && q.level === 3 ? 2 : 1);
       assert.equal(new Set(q.blanks).size, q.blanks.length);
       assert.ok(q.blanks.every(i => i >= 0 && i < q.parts.length));
@@ -71,10 +79,10 @@ test('round mixes three new words with five previously seen words; cold start is
   }
 });
 
-test('all sixty words remain reachable as new vocabulary is introduced', () => {
+test('all thousand words remain reachable as new vocabulary is introduced', () => {
   const seen = [];
-  for (let i = 0; i < 22; i++) for (const q of makeRound(1, { seen, rng })) if (!seen.includes(q.id)) seen.push(q.id);
-  assert.equal(seen.length, 60);
+  for (let i = 0; i < 340; i++) for (const q of makeRound(1, { seen, rng })) if (!seen.includes(q.id)) seen.push(q.id);
+  assert.equal(seen.length, 1000);
 });
 
 test('placement samples two per level, requires earlier foundations, and permits skipped/assisted answers', () => {
