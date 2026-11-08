@@ -1,9 +1,11 @@
+import { SCENARIO_EXPANSION } from './scenario-expansion.js';
 import { VOCABULARY as AUTHORED, TOPICS as AUTHORED_TOPICS } from './curated.js';
 import { EXTENDED_VOCABULARY, CURATED_FREQUENCIES } from './extended.js';
 
-// All 3000 words support meaning/spelling; only authored examples enter sentence practice.
+// All 3000 words support recognition and spelling; 500 authored examples support sentence practice.
 export const CURATED_VOCABULARY = AUTHORED.map(v => ({ ...v, source: '原创精练', frequencyRank: CURATED_FREQUENCIES[v.word] || 0 }));
-const entries = [...CURATED_VOCABULARY, ...EXTENDED_VOCABULARY];
+const scenes = new Map(SCENARIO_EXPANSION.map(v => [v.word, v]));
+const entries = [...CURATED_VOCABULARY, ...EXTENDED_VOCABULARY.map(v => ({...v, ...scenes.get(v.word)}))];
 export const TOPICS = [...AUTHORED_TOPICS, '通用表达'];
 const buckets = new Map();
 for (const entry of entries) {

@@ -9,7 +9,7 @@ const copy = {
   ready: '选一个答案，让软乎乎送过去吧。', wrong: '差一点点，再看看中文提示吧。',
   correct: '气泡命中！选对啦。', finished: '单词收集成功！一起读一读。',
   resultTitle: '每一点进步\n都值得庆祝。', learned: '今天又练了一个单词', unlearned: '先来认识这个新单词',
-  home: '回到词汇练习', disclaimer: '雅思 G 类备考词库：识义与拼写各 3000 词，语境精练 180 词。含原创词条及 ECDICT 通用词典释义，不是官方 G 类词表。练习分层参考词频，不对应雅思分数。',
+  home: '回到词汇练习', disclaimer: '雅思 G 类备考词库：识义与拼写各 3000 词，语境精练 500 词。含原创词条及 ECDICT 通用词典释义，不是官方 G 类词表。练习分层参考词频，不对应雅思分数。',
   logoBits: ['听', '说'],
 };
 
@@ -23,9 +23,9 @@ function makeMode(id, label, details) {
       return { ...v, id: `${id}:${v.id}`, vocabId: v.id, type: id, parts: spelling ? [...v.word] : [v.word], blanks };
     }),
     levels: [
-      { id: 1, name: '基础', label: `${details[0]} · 每题 40 秒`, color: 'mint', seconds: 40 },
-      { id: 2, name: '核心', label: `${details[1]} · 每题 35 秒`, color: 'blue', seconds: 35 },
-      { id: 3, name: '进阶', label: `${details[2]} · 每题 30 秒`, color: 'violet', seconds: 30 },
+      { id: 1, name: '基础', label: `${details[0]} · 每题 ${id === 'dictation' ? 60 : 40} 秒`, color: 'mint', seconds: id === 'dictation' ? 60 : 40 },
+      { id: 2, name: '核心', label: `${details[1]} · 每题 ${id === 'dictation' ? 60 : 35} 秒`, color: 'blue', seconds: id === 'dictation' ? 60 : 35 },
+      { id: 3, name: '进阶', label: `${details[2]} · 每题 ${id === 'dictation' ? 60 : 30} 秒`, color: 'violet', seconds: id === 'dictation' ? 60 : 30 },
     ],
     rules: { roundSize: 8, placementPerLevel: 2, demoPerLevel: 2 },
     copy: { ...copy },
@@ -35,6 +35,7 @@ function makeMode(id, label, details) {
 export const MODES = {
   meaning: makeMode('meaning', '词义辨析', ['生活常用词', 'G 类核心词', '表达拓展词']),
   spelling: makeMode('spelling', '听音拼写', ['听音补字母', '核心词拼写', '长词双空练习']),
+  dictation: makeMode('dictation', '完整听写', ['听音写全词', '核心词听写', '进阶词听写']),
   sentence: makeMode('sentence', '语境精练', ['日常场景', '职场与书信', '搭配与表达']),
 };
 export const DEFAULT_MODE = MODES.meaning;

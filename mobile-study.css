@@ -1,0 +1,122 @@
+/* Touch-first study tools. Keep the original animation assets and styles intact. */
+:root { color-scheme: light; }
+button, input, select, textarea, summary { touch-action: manipulation; }
+button, select, summary { min-height:44px; }
+input, select, textarea { font:inherit; font-size:16px; color:var(--ink); }
+input,select,textarea { max-width:100%; border:2px solid #d7c7d1; background:#fffefb; border-radius:12px; padding:11px 12px; }
+textarea { width:100%; line-height:1.7; resize:vertical; }
+textarea:focus,input:focus,select:focus { outline:3px solid #b7caff; outline-offset:2px; }
+.daily-plan { background:#fffdf7; border:2px solid var(--ink); box-shadow:0 4px 0 #dcc9d2; border-radius:22px; padding:18px; margin:22px 0 28px; text-align:left; }
+.daily-head { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.daily-head h2 { font-size:21px; letter-spacing:-.5px; }
+.daily-head label { display:flex; align-items:center; gap:6px; font-size:12px; white-space:nowrap; }
+#daily-goal { padding:8px; }
+#daily-summary { font-size:14px; margin:12px 0 7px; font-weight:750; }
+#daily-progress { width:100%; height:9px; display:block; accent-color:#6b83d7; margin-bottom:15px; }
+#start-daily { width:100%; margin:0 0 8px; }
+#study-status:not(:empty) { font-size:13px; line-height:1.6; margin-top:8px; color:#85441f; }
+.study-links { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:16px 0; }
+.study-links button:last-child { grid-column:1/-1; }
+.study-dialog { padding:0; width:min(540px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); color:var(--ink); background:#fffaf0; border:2px solid var(--ink); border-radius:22px; overflow:auto; overscroll-behavior:contain; }
+.study-dialog::backdrop { background:#30223880; backdrop-filter:blur(3px); }
+.study-dialog header { position:sticky; top:0; z-index:3; background:#fffaf0; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; border-bottom:1px solid #e5d9df; }
+.study-dialog h2 { font-size:19px; line-height:1.4; }
+#close-study { width:44px; min-width:44px; border-radius:50%; background:#f3e4e9; }
+#study-body { padding:18px; line-height:1.7; overflow-wrap:anywhere; }
+#study-body p { margin:12px 0; }
+#study-body label { display:block; }
+#study-body select { display:block; width:100%; margin:6px 0 16px; }
+#study-body fieldset { border:1px solid #d8cbd4; border-radius:14px; margin:16px 0; min-width:0; padding:12px; }
+#study-body legend { padding:0 5px; font-weight:750; }
+#study-body .reading-option,.letter-checks label { display:flex; align-items:flex-start; gap:10px; padding:10px 4px; min-height:44px; }
+#study-body input[type=radio],#study-body input[type=checkbox] { width:20px; height:20px; flex:0 0 20px; margin:3px 0 0; accent-color:#5278bf; }
+#study-body input[type=file] { width:100%; font-size:14px; }
+#study-body details { background:#f0f2fa; border-radius:12px; padding:10px 12px; margin:15px 0; }
+#study-body summary { cursor:pointer; padding:8px 0; font-weight:750; }
+.practice-tag { color:#5c6891; font-size:13px; font-weight:800; }
+.reading-passage { font-size:17px; line-height:1.85; background:#fff; border:1px solid #e5d9df; padding:18px; border-radius:14px; white-space:pre-wrap; }
+.reading-feedback { background:#eaf3ec; border-radius:10px; padding:10px; font-size:14px; }
+.reading-feedback:empty { display:none; }
+.dictation-form { padding:12px 0; }
+.dictation-form>label { display:block; font-size:14px; font-weight:800; margin:0 0 8px; }
+.dictation-row { display:flex; gap:8px; align-items:stretch; }
+#dictation-input { min-width:0; flex:1; font-size:20px; min-height:52px; }
+#dictation-submit { font-size:16px; padding:10px 20px; margin:0; width:auto; min-width:76px; }
+#dictation-diff { font-family:ui-monospace,monospace; font-size:21px; letter-spacing:3px; margin:10px 0; min-height:28px; overflow-wrap:anywhere; }
+.spelling-error { background:#ffe0da; border-bottom:3px solid #a63e32; color:#772d25; }
+body[data-question-type=dictation] #word-slots { min-height:45px; }
+body[data-question-type=dictation] #word-slots .word-cell { width:100%; max-width:100%; }
+@media(max-width:600px) {
+ html { scrollbar-gutter:auto; }
+ #app { padding:0 16px max(20px,env(safe-area-inset-bottom)); }
+ .topbar { padding:14px 0 8px; }
+ .hero .eyebrow { margin:8px 0; font-size:10px; letter-spacing:2px; }
+ .hero h1 { font-size:48px; }
+ .intro { font-size:12px; line-height:1.7; }
+ .home-stage { height:112px; }
+ .home-stage .slime-party { inset:10px 0 0; transform:scale(.82); }
+ .activity-grid { margin-top:14px; }
+ .mode-toggle { display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr)); width:100%; border-radius:18px; }
+ .mode-pill { min-height:44px; padding:7px 4px; font-size:13px; gap:3px; }
+ .mode-emoji,.mode-svg { width:17px; font-size:17px; }
+ .section-label { align-items:flex-start; }
+ .section-label h2 { font-size:18px; }
+ .topic-filter select { max-width:calc(100% - 80px); min-width:0; font-size:15px; }
+ .level-card { min-height:76px; padding:10px; }
+ .level-count { font-size:11px; }
+ .level-card small { font-size:11px; }
+ .daily-plan { padding:14px; margin:18px 0 24px; }
+ .study-links .sub-btn { padding:12px 8px; font-size:13px; }
+ .play-top { padding-top:8px; gap:6px; }
+ .play-top h1 { font-size:17px; }
+ .arcade-hud { gap:6px; }
+ .play-stage { max-height:150px; }
+ .question-card { padding:16px 12px; }
+ .target-word { font-size:24px; overflow-wrap:anywhere; }
+ .word-cell { min-width:0; }
+ .speaker-btn { min-width:44px; min-height:44px; }
+ .choices .choice { min-height:66px; padding:12px 8px; }
+ .choice-note span { display:none; }
+ .explain-top-row { flex-wrap:wrap; }
+ .word-pronounce-row { flex-wrap:wrap; }
+ #answer-word { overflow-wrap:anywhere; }
+ .wordbook-dialog { width:calc(100vw - 20px); max-height:calc(100dvh - 20px); padding:16px; overscroll-behavior:contain; }
+ .wordbook-head { position:sticky; top:-16px; background:#fffaf0; z-index:2; padding:8px 0; }
+ #wordbook-search { font-size:16px; }
+ .wordbook-filters { gap:8px; }
+ .wordbook-filters label { min-width:0; flex:1; }
+ .wordbook-filters select { width:100%; font-size:14px; }
+ dialog { max-width:calc(100vw - 20px); max-height:calc(100dvh - 20px); overscroll-behavior:contain; }
+ #study-body { padding:14px; }
+ .reading-passage { padding:14px; font-size:16px; }
+ .study-dialog header { padding-top:max(10px,env(safe-area-inset-top)); }
+ .settings-screen { padding-bottom:env(safe-area-inset-bottom); }
+}
+@media(max-height:650px) and (max-width:600px) {
+ body[data-screen=play] .play-stage { height:70px; min-height:70px; }
+ body[data-screen=play] .arcade-hud { margin-bottom:6px; }
+ body[data-screen=play] .question-card { margin-top:6px; padding:10px; }
+}
+@media(prefers-reduced-motion:reduce) { .study-dialog { scroll-behavior:auto; } }
+.daily-level-label { display:flex; align-items:center; gap:10px; margin-top:10px; font-size:13px; }
+#daily-level { padding:8px; flex:1; }
+.free-heading { font-size:18px; margin:24px 0 12px; }
+@media(max-width:600px) {
+ .home-stage { height:88px; }
+ .home-stage .slime-party { transform:scale(.7); }
+ .daily-plan { margin-top:14px; }
+ #start-placement { min-height:66px; font-size:22px; }
+}
+body[data-question-type=dictation] .word-slots { display:flex; justify-content:center; }
+body[data-question-type=dictation] #word-slots .word-cell { aspect-ratio:auto; height:54px; min-height:54px; font-size:27px; flex:1; }
+@media(max-width:600px) {
+ body.keyboard-open[data-screen=play] .play-stage { height:45px; min-height:45px; overflow:hidden; }
+ body.keyboard-open[data-screen=play] #word-slots { display:none; }
+ body.keyboard-open[data-screen=play] .question-card { padding:10px; margin-top:8px; }
+ body.keyboard-open .study-dialog { max-height:calc(100dvh - 16px); }
+}
+body [hidden] { display:none!important; }
+@media(max-width:600px) {
+ body.keyboard-open[data-screen=play] #word-slots { display:none!important; }
+ body.keyboard-open .study-dialog { position:fixed; top:8px; bottom:auto; margin-block:0; max-height:calc(var(--keyboard-viewport,100dvh) - 16px); }
+}

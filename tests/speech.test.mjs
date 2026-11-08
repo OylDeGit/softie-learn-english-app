@@ -123,8 +123,8 @@ test('automatic meaning/sentence cues do not disclose English answers; spelling 
     const synth = browser(); const f = createApp({ mode: mode.id, speechOptions: { synth, Utterance } });
     f.app.start('level', 1);
     const q = f.app.scene.questions[0];
-    assert.equal(synth.spoken[0].lang, mode.id === 'spelling' ? 'en-US' : 'zh-CN');
-    if (mode.id === 'spelling') assert.equal(synth.spoken[0].text, q.word);
+    assert.equal(synth.spoken[0].lang, ['spelling','dictation'].includes(mode.id) ? 'en-US' : 'zh-CN');
+    if (['spelling','dictation'].includes(mode.id)) assert.equal(synth.spoken[0].text, q.word);
     else assert.ok(!synth.spoken[0].text.includes(q.word));
     await f.answer();
     assert.equal(f.app.scene.phase, 'explain');

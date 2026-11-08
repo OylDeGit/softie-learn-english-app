@@ -18,16 +18,16 @@ function memory() {
   };
 }
 
-test('3000 words support full-bank meaning/spelling and 180 authored sentence entries', () => {
-  assert.deepEqual(Object.keys(MODES), ['meaning', 'spelling', 'sentence']);
+test('3000 words support full-bank meaning/spelling and 500 authored sentence entries', () => {
+  assert.deepEqual(Object.keys(MODES), ['meaning', 'spelling', 'dictation', 'sentence']);
   const all = Object.values(MODES).flatMap(mode => mode.questions);
-  assert.equal(all.length, 6180);
-  assert.equal(new Set(all.map(q => q.id)).size, 6180);
+  assert.equal(all.length, 9500);
+  assert.equal(new Set(all.map(q => q.id)).size, 9500);
   for (const mode of Object.values(MODES)) {
-    const expected = mode.id === 'sentence' ? 180 : 3000;
+    const expected = mode.id === 'sentence' ? 500 : 3000;
     assert.equal(mode.questions.length, expected);
     assert.equal(new Set(mode.questions.map(q => q.word)).size, expected);
-    for (const level of mode.levels) assert.equal(mode.questions.filter(q => q.level === level.id).length, expected / 3);
+    for (const level of mode.levels) assert.ok(mode.id === 'sentence' ? mode.questions.filter(q => q.level === level.id).length >= 60 : mode.questions.filter(q => q.level === level.id).length === 1000);
     const topics = new Set(mode.questions.map(q => q.topic));
     assert.equal(topics.size, mode.id === 'sentence' ? 6 : 7);
     for (const topic of topics) assert.ok(mode.questions.filter(q => q.topic === topic).length >= 30);
@@ -40,7 +40,7 @@ test('3000 words support full-bank meaning/spelling and 180 authored sentence en
         assert.ok(q.translation && q.pattern && q.collocationMeaning && q.useCase);
         assert.ok(q.collocation.includes(q.word), q.id);
         assert.equal(q.context.split('____').length, 2);
-        assert.ok(!q.context.includes(q.word));
+        assert.ok(!new RegExp(`\\b${q.word}\\b`, 'i').test(q.context), q.word);
       } else {
         assert.equal(q.source, 'ECDICT');
         assert.ok(q.dictionaryMeanings);

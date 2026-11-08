@@ -1,3 +1,4 @@
+import { normalizeDictation, spellingFeedback, dictationMatches } from '../../js/study.js';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import * as modes from '../../js/modes.js';
@@ -60,7 +61,7 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
   };
   const cells = Array.from({ length: 4 }, element);
   const pips = Array.from({ length: 8 }, element);
-  const modePills = ['meaning', 'spelling', 'sentence'].map(id => Object.assign(element(), { dataset: { mode: id } }));
+  const modePills = ['meaning', 'spelling', 'dictation', 'sentence'].map(id => Object.assign(element(), { dataset: { mode: id } }));
   const $$ = selector => selector === '.word-cell' ? cells : selector === '.pip' ? pips
     : selector === '.choice' ? $('#choices').children : selector === '.mode-pill' ? modePills : [];
   const savedData = new Map(Object.values(modes.MODES).map(mode => {
@@ -90,7 +91,7 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     }); }
   }
   const context = vm.createContext({
-    ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, searchWordbook,
+    normalizeDictation, spellingFeedback, dictationMatches, initStudyTools: () => ({refresh(){},record(){},round(){return []}}), ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, searchWordbook,
     dayKey: (d = new FakeDate()) => storage.dayKey(d),
     currentStreak: (history, nc, today = new FakeDate()) => storage.currentStreak(history, nc, today),
     hammerOffer: (calendar, history, today = new FakeDate()) => storage.hammerOffer(calendar, history, today),
@@ -122,11 +123,15 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     await advance(thinkingMs);
     if (wrong) {
       const q = app.scene.questions[app.scene.qi];
-      await app.choose($('#choices').children.find(b => b.dataset.char !== idioms.answerAt(q, app.scene.step)));
+      const b = app.scene.questions[0].type === 'dictation' ? $('#dictation-submit') : $('#choices').children.find(b => b.dataset.char !== idioms.answerAt(q, app.scene.step));
+      if(q.type === 'dictation') { b.dataset.char='wrong'; $('#dictation-input').value='wrong'; }
+      await app.choose(b);
     }
     while (app.scene.phase === 'answer') {
       const q = app.scene.questions[app.scene.qi];
-      await app.choose($('#choices').children.find(b => b.dataset.char === idioms.answerAt(q, app.scene.step)), app.scene.demo);
+      const b = q.type === 'dictation' ? $('#dictation-submit') : $('#choices').children.find(b => b.dataset.char === idioms.answerAt(q, app.scene.step));
+      if(q.type === 'dictation') { b.dataset.char=q.word; $('#dictation-input').value=q.word; }
+      await app.choose(b, app.scene.demo);
     }
     await advance(0);
   }

@@ -1,3 +1,4 @@
+import { normalizeDictation, spellingFeedback, dictationMatches } from '../js/study.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -102,7 +103,7 @@ function createAudioHarness({ soundEnabled = true, volume = 0.8 } = {}) {
 
   let clock = 100;
   const context = vm.createContext({
-    ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, SpeechReader,
+    normalizeDictation, spellingFeedback, dictationMatches, initStudyTools: () => ({refresh(){},record(){},round(){return []}}), ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, SpeechReader,
     dayKey: () => '2026-10-01',
     currentStreak: () => 0,
     hammerOffer: () => null,

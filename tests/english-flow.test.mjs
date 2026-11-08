@@ -5,7 +5,7 @@ import { MODES } from '../js/modes.js';
 import { answerAt } from '../js/idioms.js';
 import { freshSave } from '../js/storage.js';
 
-test('all three modes complete each level using whole words or letters through the original answer flow', async () => {
+test('all four modes complete each level using whole words or letters through the original answer flow', async () => {
   for (const mode of Object.values(MODES)) for (const level of mode.levels) {
     const f = createApp({ mode: mode.id }); f.app.start('level', level.id);
     await f.round();
@@ -27,7 +27,7 @@ test('whole-word cards keep the target masked until answer; spelling uses its ac
       assert.ok(!f.$('#context').textContent.includes(q.word));
       assert.ok(!f.$('#word-slots').attrs['aria-label'].includes(q.word));
     }
-    assert.ok(f.$('#choices').children.some(button => button.dataset.char === answerAt(q, 0)));
+    if(mode.id === 'dictation') { assert.equal(f.$('#choices').hidden,true); assert.equal(f.$('#dictation-form').hidden,false); } else assert.ok(f.$('#choices').children.some(button => button.dataset.char === answerAt(q, 0)));
     await f.answer(); assert.equal(f.cells.map(cell => cell.textContent).join(''), q.word);
   }
 });
@@ -44,7 +44,7 @@ test('timeout fills every letter of a long word without undefined and sends it t
   assert.deepEqual(f.app.saved.review, [q.id]);
 });
 
-test('switching among all three modes does not transfer progress or pending trophies', async () => {
+test('switching among all four modes does not transfer progress or pending trophies', async () => {
   const f = createApp();
   f.app.start('level', 1); await f.round();
   assert.equal(f.app.saved.learned.length, 8);

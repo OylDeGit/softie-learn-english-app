@@ -56,13 +56,13 @@ test('switching from general vocabulary to sentence practice resets an unsupport
   assert.match(f.$('#home-progress').textContent, /通用表达/);
   f.app.setAudienceMode('sentence', false);
   assert.equal(f.$('#topic-select').value, '');
-  assert.match(f.$('#mode-coverage').textContent, /180 词/);
+  assert.match(f.$('#mode-coverage').textContent, /500 词/);
   assert.ok(!f.$('#topic-select').innerHTML.includes('通用表达'));
   f.app.start('level', 1); assert.equal(f.app.scene.questions.length, 8);
 });
 
 test('expanded dictionary cards have readable explanations and never fabricate missing collocations', async () => {
-  const q = MODES.meaning.questions.find(q => q.source === 'ECDICT');
+  const q = MODES.meaning.questions.find(q => q.source === 'ECDICT' && !q.context);
   const f = createApp({ saves: { meaning: { version: 1, review: [q.id] } } });
   f.app.start('review'); await f.answer();
   assert.equal(f.$('#usage-card').hidden, true);
