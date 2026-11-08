@@ -1,8 +1,8 @@
 import { VOCABULARY as AUTHORED, TOPICS as AUTHORED_TOPICS } from './curated.js';
-import { EXTENDED_VOCABULARY } from './extended.js';
+import { EXTENDED_VOCABULARY, CURATED_FREQUENCIES } from './extended.js';
 
 // All 3000 words support meaning/spelling; only authored examples enter sentence practice.
-export const CURATED_VOCABULARY = AUTHORED.map(v => ({ ...v, source: '原创精练' }));
+export const CURATED_VOCABULARY = AUTHORED.map(v => ({ ...v, source: '原创精练', frequencyRank: CURATED_FREQUENCIES[v.word] || 0 }));
 const entries = [...CURATED_VOCABULARY, ...EXTENDED_VOCABULARY];
 export const TOPICS = [...AUTHORED_TOPICS, '通用表达'];
 const buckets = new Map();

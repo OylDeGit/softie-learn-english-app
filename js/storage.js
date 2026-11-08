@@ -91,6 +91,7 @@ export function freshSave(mode = DEFAULT_MODE) {
     recommended: null,
     learned: [],
     review: [],
+    wordStats: {},
     rounds: 0,
     settings: { sound: true, motion: true, volume: 0.8, autoSpeak: true, localOnly: true, speechRate: 0.85 },
     history: [],
@@ -138,6 +139,21 @@ export function loadSave(storage, mode = DEFAULT_MODE) {
     const known = new Set(mode.questions.map((q) => q.id));
     for (const key of ['learned', 'review']) {
       base[key] = [...new Set((Array.isArray(value[key]) ? value[key] : []).filter((id) => known.has(id)))];
+    }
+    const learned = new Set(base.learned);
+    if (value.wordStats && typeof value.wordStats === 'object' && !Array.isArray(value.wordStats)) {
+      for (const [id, row] of Object.entries(value.wordStats)) {
+        if (!known.has(id) || !learned.has(id) || !row || typeof row !== 'object') continue;
+        const integer = (key, max) => Number.isSafeInteger(row[key]) ? Math.min(max, Math.max(0, row[key])) : 0;
+        const attempts = integer('attempts', 1000000);
+        if (!attempts) continue;
+        const lastSeen = integer('lastSeen', 8640000000000000);
+        const dueAt = integer('dueAt', 8640000000000000);
+        base.wordStats[id] = { attempts, correct: Math.min(attempts, integer('correct', 1000000)),
+          lapses: Math.min(attempts, integer('lapses', 1000000)), streak: integer('streak', 5),
+          intervalDays: integer('intervalDays', 30), lastSeen,
+          dueAt: dueAt >= lastSeen && dueAt <= lastSeen + 31 * 86400000 ? dueAt : 0 };
+      }
     }
     base.recommended = mode.levels.some((l) => l.id === value.recommended) ? value.recommended : null;
     base.rounds = Number.isSafeInteger(value.rounds) && value.rounds >= 0 ? value.rounds : 0;

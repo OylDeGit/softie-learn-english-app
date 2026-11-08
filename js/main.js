@@ -6,7 +6,7 @@ import { Backdrop } from './bg.js';
 import { mountSofties, softieSVG, bounce, bubbleHit } from './softie.js';
 import { MODES, WORD_BANK, getMode, saveKey } from './modes.js';
 import { searchWordbook } from './wordbook.js';
-import { makeRound, placementRound, recommendedLevel, optionsFor, recordAnswer, shuffle, answerAt, partsFor } from './idioms.js';
+import { makeRound, placementRound, recommendedLevel, optionsFor, recordAnswer, shuffle, answerAt, partsFor, reviewPool, selectReviewRound, frequencyLabel, normalizeStrategy } from './idioms.js';
 import { loadSave, persistSave, resetAllSaves, dayKey, currentStreak, bestStreak, hammerOffer, useHammer, playedDays, STICKERS, claimLogin, stickerOn, bonusState } from './storage.js';
 import { ensureDailyQuests, questText, feedQuestEvent, isAllQuestsDone, claimQuestReward } from './quests.js';
 import { TROPHIES, extractTrophyMetrics, evaluateTrophies, getEarnedTrophiesCount, RANK_NAMES } from './trophies.js';
@@ -27,6 +27,8 @@ const topics = [...new Set(WORD_BANK.map(q => q.topic))];
 let selectedTopic = '';
 try { selectedTopic = storage?.getItem('softie-ielts-gt:topic') || ''; } catch { /* Use all topics. */ }
 if (!topics.includes(selectedTopic)) selectedTopic = '';
+let practiceStrategy = 'smart';
+try { practiceStrategy = normalizeStrategy(storage?.getItem('softie-ielts-gt:strategy')); } catch { /* Use smart practice. */ }
 try { if (!storage?.getItem(saveKey(mode))) saved.settings.motion = !matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* Use default settings. */ }
 const audio = new AudioEngine();
 const fx = new FX($('#fx'), 300);
@@ -650,9 +652,14 @@ function refreshHome() {
   }).join('');
   $('#start-label').textContent = saved.recommended ? copy.stationStart.replace('{name}', levelInfo(saved.recommended).name) : copy.placement;
   $('#start-note').textContent = saved.recommended ? `${selectedTopic || '全部话题'} · 每轮 ${mode.rules.roundSize} 题` : `先练 ${mode.levels.length * mode.rules.placementPerLevel} 题 · 起点测验覆盖全部话题`;
-  const reviewCount = visibleQuestions.filter(q => saved.review.includes(q.id)).length;
+  const reviewCount = reviewPool(mode, saved, { topic: selectedTopic, now: Date.now() }).length;
   $('#review-count').textContent = reviewCount;
   $('#start-review').disabled = !reviewCount;
+  const dueCount = reviewPool(mode, { ...saved, review: [] }, { topic: selectedTopic, now: Date.now() }).length;
+  $('#review-summary').textContent = `到期 ${dueCount} 词 · 待巩固 ${visibleQuestions.filter(q => saved.review.includes(q.id)).length} 词`;
+  $('#strategy-select').value = practiceStrategy;
+  $('#strategy-note').textContent = practiceStrategy === 'smart' ? '高频新词适度优先；到期、易错词优先复习。近期答对的词先间隔学习，低频词仍有机会。'
+    : practiceStrategy === 'frequency' ? '按通用语料词频加权抽题，高频词更常出现；仍保留新旧词混合。' : '新旧词混合，池内均匀随机；词频与薄弱程度不影响抽取。';
   $('#retest').hidden = !saved.recommended;
   const learnedCount = visibleQuestions.filter(q => saved.learned.includes(q.id)).length;
   $('#home-progress').textContent = `${selectedTopic || '全部话题'} · 本玩法练过 ${learnedCount} / ${visibleQuestions.length} 词 · ${copy.footer}`;
@@ -687,9 +694,9 @@ function start(kind = 'level', level = saved.recommended || mode.levels[0].id) {
   updateDailyQuests();
   let questions;
   if (kind === 'placement') questions = placementRound(Math.random, mode);
-  else if (kind === 'review') questions = shuffle(mode.questions.filter((q) => saved.review.includes(q.id) && (!selectedTopic || q.topic === selectedTopic))).slice(0, mode.rules.roundSize);
+  else if (kind === 'review') questions = selectReviewRound(mode, saved, { topic: selectedTopic, strategy: practiceStrategy, now: Date.now() });
   else if (kind === 'demo') questions = mode.levels.flatMap((l) => makeRound(l.id, { mode, count: mode.rules.demoPerLevel }));
-  else questions = makeRound(level, { mode, seen: saved.learned, topic: selectedTopic });
+  else questions = makeRound(level, { mode, seen: saved.learned, topic: selectedTopic, strategy: practiceStrategy, stats: saved.wordStats, now: Date.now() });
   if (!questions.length) { home(); return; }
   Object.assign(S, { questions, kind, level, qi: 0, step: 0, combo: 0, peak: 0, misses: 0, playMs: 0, energy: 0, shownEnergy: 0, energyUnit: 0, E: .08, results: [], demo: kind === 'demo', phase: 'answer', demoSlipped: false });
   actors.forEach((a) => { a.hidden = true; });
@@ -733,7 +740,7 @@ function setupQuestion() {
   setShowLevel();
   audio.key = S.qi === S.questions.length - 1 ? 2 : 0;
   $('#question-number').textContent = `${String(S.qi + 1).padStart(2, '0')} / ${String(S.questions.length).padStart(2, '0')}`;
-  $('#level-tag').textContent = `${levelInfo(q.level).name} · ${q.topic} · ${q.pos}`;
+  $('#level-tag').textContent = `${levelInfo(q.level).name} · ${q.topic} · ${q.pos} · ${frequencyLabel(q)}`;
   $('#word-slots').style.setProperty('--letter-count', q.word.length);
   $('#blank-count').textContent = mode.id === 'spelling' ? `补${q.blanks.length}个字母` : '选一个单词';
   if (mode.id === 'sentence') {
@@ -885,7 +892,7 @@ function completeQuestion(skipped = false, timedOut = false) {
   S.phase = 'explain'; S.ready = false;
   const firstTry = S.firstTry && !skipped;
   S.results.push({ id: q.id, level: q.level, firstTry, completed: !skipped });
-  recordAnswer(saved, q, firstTry, { demo: S.demo, placement: S.kind === 'placement' });
+  const scheduled = recordAnswer(saved, q, firstTry, { demo: S.demo, placement: S.kind === 'placement', now: Date.now() });
   if (!S.demo && S.kind !== 'placement') {
     saved.stats.problems = (saved.stats.problems || 0) + (skipped ? 0 : 1);
     if (firstTry) saved.stats.firstTry = (saved.stats.firstTry || 0) + 1;
@@ -940,6 +947,12 @@ function completeQuestion(skipped = false, timedOut = false) {
   const readLabel = q.context ? '朗读单词和例句' : q.definition ? '朗读单词和英文释义' : '朗读单词';
   $('#read-explanation').setAttribute('aria-label', readLabel);
   $('#read-explanation').title = readLabel;
+  $('#schedule-note').hidden = !scheduled;
+  if (scheduled) {
+    const minutes = Math.max(1, Math.ceil((scheduled.dueAt - Date.now()) / 60000));
+    const when = minutes < 60 ? `${minutes} 分钟` : minutes < 1440 ? `${Math.ceil(minutes / 60)} 小时` : `${Math.ceil(minutes / 1440)} 天`;
+    $('#schedule-note').textContent = `下次建议复习：约 ${when}后。提前重复答对不会延长原间隔。`;
+  }
   if (!S.demo && saved.settings.autoSpeak) readExplanation();
   $('#next-question').textContent = S.qi === S.questions.length - 1 ? '这一轮完成啦 →' : '记住啦，下一题 →';
   if (!S.demo) $('#next-question').focus({ preventScroll: true });
@@ -1271,6 +1284,11 @@ function initLogoBurst() {
 initLogoBurst();
 
 const modeSelect = $('#mode-select');
+$('#strategy-select').addEventListener('change', () => {
+  practiceStrategy = normalizeStrategy($('#strategy-select').value);
+  try { storage?.setItem('softie-ielts-gt:strategy', practiceStrategy); } catch { /* Storage may be blocked. */ }
+  refreshHome();
+});
 const escapeText = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let wordbookPage = 1;
 function renderWordbook() {
@@ -1283,7 +1301,7 @@ function renderWordbook() {
     <div class="wordbook-word"><strong>${escapeText(q.word)}</strong><span>${escapeText(q.phonetic ? `/${q.phonetic}/` : '')}</span><button type="button" data-book-speech="${q.word}" aria-label="朗读 ${q.word}">听</button></div>
     <p>${escapeText(q.pos)} ${escapeText(q.meaning)}</p>
     ${q.collocation ? `<p class="wordbook-collocation">${escapeText(q.collocation)} · ${escapeText(q.collocationMeaning)}</p>` : ''}
-    <small>${escapeText(levelInfo(q.level).name)} · ${escapeText(q.topic)} · ${escapeText(q.source)}</small>
+    <small>${escapeText(levelInfo(q.level).name)} · ${escapeText(q.topic)} · ${escapeText(frequencyLabel(q))} · ${escapeText(q.source)}</small>
   </li>`).join('') : '<li class="wordbook-empty">没有匹配词汇，请换个关键词或筛选条件。</li>';
   $('#wordbook-prev').disabled = result.page <= 1;
   $('#wordbook-next').disabled = result.page >= result.pages;
@@ -1757,6 +1775,7 @@ document.addEventListener('visibilitychange', () => {
     if (S.screen === 'play') audio.startMusic();
     else if (S.screen === 'home' || S.screen === 'settings') startHomeMusic();
   }
+  if (!document.hidden && S.screen === 'home') refreshHome();
 });
 homeActors.forEach((a) => {
   a.addEventListener('pointerenter', () => {

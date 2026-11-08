@@ -174,11 +174,14 @@
         <select id="topic-select" aria-describedby="topic-note"><option value="">全部话题 · 3000 词</option></select>
       </div>
       <p id="topic-note" class="topic-note">各话题按实际收录量显示 · 起点测验覆盖全部话题</p>
+      <div class="topic-filter strategy-filter"><label for="strategy-select">出题策略</label><select id="strategy-select" aria-describedby="strategy-note"><option value="smart">智能优先（推荐）</option><option value="frequency">高频优先</option><option value="uniform">均匀随机</option></select></div>
+      <p id="strategy-note" class="topic-note"></p>
       <div id="levels" class="level-list" aria-label="选择难度"></div>
       <div class="home-actions">
-        <button id="start-review" class="sub-btn" disabled>再练一练 <span id="review-count">0</span></button>
+        <button id="start-review" class="sub-btn" disabled>复习词汇 <span id="review-count">0</span></button>
         <button id="start-demo" class="sub-btn">泡泡秀演示 <span aria-hidden="true">▷</span></button>
       </div>
+      <p id="review-summary" class="topic-note"></p>
 
       <button id="open-wordbook" class="wordbook-open">查看 / 搜索 3000 词词表</button>
       <p id="home-progress" class="footnote">不用赶时间，答错也没关系。</p>
@@ -268,6 +271,7 @@
         <p id="example" class="example"></p>
         <div id="usage-card" class="usage-card"><strong>常用搭配</strong><p id="collocation"></p><small id="use-case"></small></div>
         <p id="word-source" class="word-source"></p>
+        <p id="schedule-note" class="schedule-note" hidden></p>
         <button id="next-question" class="primary">记住啦，下一题 <span aria-hidden="true">→</span></button>
       </div>
       <p id="tts-note" class="speech-status" role="status" aria-live="polite"></p>
