@@ -34,13 +34,13 @@ test('whole-word cards keep the target masked until answer; spelling uses its ac
 
 test('timeout fills every letter of a long word without undefined and sends it to review', async () => {
   const mode = MODES.spelling; const save = freshSave(mode);
-  const q = mode.questions.find(q => q.word === 'elephant');
+  const q = mode.questions.find(q => q.word === 'infrastructure');
   save.review = [q.id];
   const f = createApp({ mode: mode.id, saves: { spelling: save } }); f.app.start('review');
-  assert.equal(f.cells.length, 8);
-  await f.advance(21000);
+  assert.equal(f.cells.length, 14);
+  await f.advance(31000);
   assert.equal(f.app.scene.phase, 'explain');
-  assert.equal(f.cells.map(cell => cell.textContent).join(''), 'elephant');
+  assert.equal(f.cells.map(cell => cell.textContent).join(''), 'infrastructure');
   assert.deepEqual(f.app.saved.review, [q.id]);
 });
 

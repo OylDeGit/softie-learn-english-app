@@ -224,7 +224,7 @@ test('explanation card heading dynamically adapts for correct answer vs timeout 
   // 2. Children mode: timeout -> 先来认识这个新单词
   const fc2 = createApp({ mode: 'meaning' });
   fc2.app.start('level', 1);
-  await fc2.advance(35000); // 30s timeout
+  await fc2.advance(45000); // 40s timeout
   assert.equal(fc2.$('.explain-heading span').textContent, '先来认识这个新单词');
 
   // 3. Adult mode: correct answer -> 今天又练了一个单词
@@ -236,7 +236,7 @@ test('explanation card heading dynamically adapts for correct answer vs timeout 
   // 4. Adult mode: timeout -> 先来认识这个新单词
   const fa2 = createApp({ mode: 'spelling' });
   fa2.app.start('level', 1);
-  await fa2.advance(35000); // 30s timeout
+  await fa2.advance(45000); // 40s timeout
   assert.equal(fa2.$('.explain-heading span').textContent, '先来认识这个新单词');
 });
 

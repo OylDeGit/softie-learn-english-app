@@ -1,64 +1,49 @@
-# 软乎乎 · 英语泡泡
+# 雅思泡泡 · General Training
 
-基于 [成语泡泡](https://github.com/yuanyang749/softie-idioms-app) 的独立儿童英语启蒙版。保留原版 UI、Softie 角色、音效、音乐、泡泡运输、多巴胺连击和终场演出。中文操作界面，零 npm 依赖，无构建步骤、无后端。
+面向目标 6–7 分的雅思 **G 类**备考者，在泡泡游戏里练习生活、职场和书信词汇。
 
-## 在线试玩
+这是基于 [yuanyang749/softie-learn-english-app](https://github.com/yuanyang749/softie-learn-english-app) 的个人非官方改编，保留 Softie 角色、音乐、动画、签到和奖杯，以及原作者署名和 [许可证](LICENSE-SOFTIE)。与 IELTS 官方无关联。
 
-此仓库是基于 [yuanyang749/softie-learn-english-app](https://github.com/yuanyang749/softie-learn-english-app) 的个人非官方部署，保留原作者署名与许可证。
+## 在线访问
 
-体验地址：[https://oyldegit.github.io/softie-learn-english-app/](https://oyldegit.github.io/softie-learn-english-app/)
+[打开雅思 G 类词汇练习](https://oyldegit.github.io/softie-learn-english-app/)
 
-## 快速运行
+## 内容与玩法
 
-需要 Node.js 20+ 和 Python 3。解压源码后进入项目目录：
+- 180 个精选词，六个话题各 30 词：生活与住房、工作与职业、出行与服务、健康与习惯、社区与环境、学习与沟通。
+- 每词含当前义项的词性与中文释义、常用搭配及译义、原创例句与中文翻译、G 类使用场景。
+- 三种玩法共 540 道题：词义辨析、听音补字母、语境填词。拼写为补一至两个字母，不是完整听写；语境题提供中文提示，不是雅思阅读模拟。
+- 基础、核心、进阶各 60 词；可按话题练，每话题每层 10 词。每轮 8 题，学习过后优先混合新词与旧词。
+- 基础 40 秒、核心 35 秒、进阶 30 秒。朗读和解析期间暂停计时；误答、提示和超时的词进入复习。
+- 起点小测覆盖全部话题，每层抽两题，只用于建议练习层级，不预测雅思分数。
+
+重点情境包括租房咨询与报修、求职和请假、预订和退款、课程咨询与正式书信。题库中如 `a refundable deposit`、`reimburse travel expenses`、`a sincere apology` 等搭配可继续用于自己造句。
+
+这是一个小规模词汇练习集，不是官方完整词表或完整备考课程。选题方向参考 [G 类阅读格式](https://ielts.org/take-a-test/test-types/ielts-general-training-test/ielts-general-training-format-reading) 和 [G 类写作格式](https://ielts.org/take-a-test/test-types/ielts-general-training-test/ielts-general-training-format-writing)，例句为独立编写。完整词条见 [VOCABULARY.md](VOCABULARY.md)。
+
+## 本地运行与测试
+
+零 npm 依赖、无构建、无后端。需要 Node.js 20+ 与 Python 3。
 
 ```bash
 npm run dev
+npm test
 ```
 
-打开 `http://127.0.0.1:8016`。不要直接用 `file://` 打开 `index.html`，浏览器需要通过 HTTP 加载 ES modules。验证用 `npm test`。静态文件也可以部署到 GitHub Pages 等静态站点，不需要服务端。
+打开 `http://127.0.0.1:8016`，不要直接双击 HTML。GitHub Pages 从 `master` 分支根目录发布，保留 `.nojekyll`。
 
-## 三种玩法
+## 数据与朗读
 
-| 玩法 | 操作 | 一轮 |
-|---|---|---|
-| 单词识义 | 看中文提示，选择英文单词 | 8 题 |
-| 单词拼写 | 听单词、看中文，选择缺失字母；绽放站双空 | 8 题，双空最多 16 连击 |
-| 情境填词 | 读英语短句，按中文情境补一个词 | 8 题 |
+学习数据保存在当前浏览器，三个玩法互相独立。G 类使用 `softie-ielts-gt:` 命名空间，旧启蒙版 `softie-english:` 和成语版数据保留；新版重置仅清除 G 类数据。
 
-每种玩法均使用相同的 120 个词，各级 40 个词，共 360 题。六个主题各 20 个词。题库与短句详见 [VOCABULARY.md](VOCABULARY.md)。有足够已见词时，每轮安排三个新词、五个旧词；初次游玩八题全部可为新词。三个级别是游戏难度，不对应年级。
+使用浏览器 Web Speech API，默认优先本地声音，实际声音取决于系统安装情况。每题、选项和答后例句可点击朗读；设置中可调整速度与自动朗读。选择题答前不会自动读出目标英文；拼写题可朗读目标词。
 
-答错可继续重试；提示、重试、跳过、超时题进入复习；独立答对后移出复习。演示和起点测试不写入练习统计。完成分与独立答对分开显示，练过不等于掌握。
+## 代码与验证
 
-## 浏览器朗读
+- `js/content/vocabulary.js`：G 类唯一词汇来源。
+- `js/modes.js`：玩法、分层、计时和数据键。
+- `js/idioms.js`：按难度和话题组卷、选项及复习逻辑。
+- `js/main.js`：游戏、话题筛选、搭配解析。
+- `tests/ielts-gt.test.mjs`：话题组卷、复习筛选、解析、旧版数据隔离。
 
-使用浏览器 Web Speech API，无付费 API。默认自动朗读、仅本地声音、速度 0.85×。本地朗读取决于系统已安装的英语/中文声音，不能保证所有 Chrome 设备离线可用。缺声音或播放失败时显示提示，仍可继续答题。可在设置中主动允许浏览器的其他声音。
-
-- 识义/填词答前只读中文情境，答后读目标英文与完整短句；拼写可以听目标单词。
-- 题目、每个候选和解析有独立朗读按钮；点候选的“听一听”不会提交答案。
-- 等待或播放朗读时暂停思考倒计时；按钮仍能答题。
-- 作答、下一题、退出、切换玩法和切后台会取消旧朗读；15 秒保护超时避免卡住。
-- 朗读期间降低背景音乐主轨，音效引擎和用户音量设置保持原样。音效/音乐开关与朗读设置独立。
-
-## 原版保留与记录
-
-`style.css`、`show.css`、`audio.js`、`bg.js`、`core.js`、`fx.js`、`choreography.js`、`softie.js`、图标与许可证原样保留。英文长度适配写在独立 `english.css`。八个主要舞台函数保留原文，测试使用参考提交的 SHA-256 基线校验。
-
-签到、日历、补签金锤、每日委托、32 项奖杯沿用原系统。因识义/填词每轮最多八次命中，连击奖杯门槛改为 5/7/8，原连击特效不变。
-
-三个玩法各自保存练习、复习、起点、设置、任务、签到和奖杯，键名为 `softie-english:{mode}:v1`。重置只删除 `softie-english:` 数据，不影响成语版或其他应用。
-
-## 开发与验收
-
-- [详细开发任务](DEV_TASKS.md)：产品规格、改动范围、任务清单、完成状态。
-- [验证记录](QA.md)：自动测试证据及待真机验收项目。
-- `js/content/vocabulary.js`：唯一词汇来源。
-- `js/modes.js` / `js/idioms.js`：三种题型及组卷判题。
-- `js/speech.js`：可独立测试的朗读服务。
-- `js/main.js`：沿用原版主流程与演出。
-
-原项目参考提交：`005706b600d2fd0a2c6e108e0066d20f7f993c34`。本部署仓库为 `OylDeGit/softie-learn-english-app`，已配置 GitHub Pages 在线访问。原仓库未修改。
-
-## 许可证
-
-保留原项目 [LICENSE-SOFTIE](LICENSE-SOFTIE) 及其版权说明。
+原版演出与字节基线测试保留；`DEV_TASKS.md` 和 `QA.md` 中原有条目是启蒙版历史记录，不代表本版词库。G 类新增验证见 `QA.md` 顶部。

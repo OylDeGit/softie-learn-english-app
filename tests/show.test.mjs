@@ -44,7 +44,7 @@ test('show and music grow with round progress, independently of question difficu
 });
 
 test('difficulty budgets decrease and audience configuration can override them', () => {
-  assert.deepEqual(DEFAULT_MODE.levels.map((l) => questionSeconds(DEFAULT_MODE, l.id)), [30, 24, 20]);
+  assert.deepEqual(DEFAULT_MODE.levels.map((l) => questionSeconds(DEFAULT_MODE, l.id)), [40, 35, 30]);
   assert.equal(questionSeconds({ levels: [{ id: 20, seconds: 15 }] }, 20), 15);
   assert.equal(questionSeconds({ levels: [{ id: 10 }] }, 10), 30);
 });

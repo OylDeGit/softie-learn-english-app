@@ -24,8 +24,8 @@ export function optionsFor(q, step, rng = Math.random, mode = DEFAULT_MODE) {
   return shuffle([answer, ...candidates.slice(0, 3)], rng);
 }
 
-export function makeRound(level, { mode = DEFAULT_MODE, count = mode.rules.roundSize, seen = [], rng = Math.random } = {}) {
-  const pool = mode.questions.filter(q => q.level === level);
+export function makeRound(level, { mode = DEFAULT_MODE, count = mode.rules.roundSize, seen = [], topic = '', rng = Math.random } = {}) {
+  const pool = mode.questions.filter(q => q.level === level && (!topic || q.topic === topic));
   const known = new Set(seen);
   const fresh = shuffle(pool.filter(q => !known.has(q.id)), rng);
   const review = shuffle(pool.filter(q => known.has(q.id)), rng);

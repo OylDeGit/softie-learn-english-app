@@ -39,7 +39,7 @@ test('meaning and spelling modes isolate quests, calendar and trophies', () => {
     mode: 'meaning',
   });
   childSave.rounds = 1;
-  childSave.learned.push('meaning:word-cat');
+  childSave.learned.push('meaning:word-rent');
   childSave.stats.problems = 8;
   childSave.stats.firstTry = 8;
   childSave.stats.perfects = 1;
@@ -75,7 +75,7 @@ test('meaning and spelling modes isolate quests, calendar and trophies', () => {
   assert.ok(Object.keys(reloadedChild.trophies.got).length > 0, 'Children should have earned trophies');
 
   // 3. Now make changes to adult mode and ensure children mode is unaffected
-  reloadedAdult.learned.push('spelling:word-cat');
+  reloadedAdult.learned.push('spelling:word-rent');
   reloadedAdult.history.push({
     id: 'a1',
     day: today,
@@ -90,7 +90,7 @@ test('meaning and spelling modes isolate quests, calendar and trophies', () => {
   persistSave(store, reloadedAdult, adultMode);
 
   const recheckChild = loadSave(store, childrenMode);
-  assert.deepEqual(recheckChild.learned, ['meaning:word-cat']);
+  assert.deepEqual(recheckChild.learned, ['meaning:word-rent']);
   assert.equal(recheckChild.history.length, 1);
   assert.equal(recheckChild.history[0].id, 'c1');
 });

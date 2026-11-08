@@ -1,7 +1,7 @@
 {
   "name": "softie-learn-english-app",
-  "version": "0.1.0",
-  "description": "保留成语泡泡演出的儿童英语启蒙小游戏",
+  "version": "0.2.0",
+  "description": "面向雅思 G 类备考的词汇与搭配泡泡练习",
   "private": true,
   "type": "module",
   "scripts": {

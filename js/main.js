@@ -18,10 +18,14 @@ let storage;
 try { storage = window.localStorage; } catch { /* Private browser storage can be blocked. */ }
 const params = new URLSearchParams(location.search);
 let activeModeId = params.get('mode');
-if (!activeModeId) { try { activeModeId = storage?.getItem('softie-english:active-mode'); } catch { /* Storage can be blocked. */ } }
+if (!activeModeId) { try { activeModeId = storage?.getItem('softie-ielts-gt:active-mode'); } catch { /* Storage can be blocked. */ } }
 let mode = getMode(activeModeId);
 let copy = mode.copy;
 let saved = loadSave(storage, mode);
+const topics = [...new Set(mode.questions.map(q => q.topic))];
+let selectedTopic = '';
+try { selectedTopic = storage?.getItem('softie-ielts-gt:topic') || ''; } catch { /* Use all topics. */ }
+if (!topics.includes(selectedTopic)) selectedTopic = '';
 try { if (!storage?.getItem(saveKey(mode))) saved.settings.motion = !matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { /* Use default settings. */ }
 const audio = new AudioEngine();
 const fx = new FX($('#fx'), 300);
@@ -628,17 +632,20 @@ function showDayLog(dateStr) {
 }
 
 function refreshHome() {
+  const visibleQuestions = mode.questions.filter(q => !selectedTopic || q.topic === selectedTopic);
   $('#levels').innerHTML = mode.levels.map((l) => {
-    const total = mode.questions.filter((q) => q.level === l.id).length;
-    const learned = mode.questions.filter((q) => q.level === l.id && saved.learned.includes(q.id)).length;
+    const total = visibleQuestions.filter((q) => q.level === l.id).length;
+    const learned = visibleQuestions.filter((q) => q.level === l.id && saved.learned.includes(q.id)).length;
     return `<button class="level-card${saved.recommended === l.id ? ' recommended' : ''}" data-level="${l.id}"><span class="level-icon" aria-hidden="true">${softieSVG(l.color)}</span><span><strong>${l.name}${saved.recommended === l.id ? '<em>推荐起点</em>' : ''}</strong><small>${l.label}</small></span><span class="level-count" aria-label="本玩法练过 ${learned} 道，共 ${total} 道"><b>${learned}</b> / ${total}</span></button>`;
   }).join('');
   $('#start-label').textContent = saved.recommended ? copy.stationStart.replace('{name}', levelInfo(saved.recommended).name) : copy.placement;
-  $('#start-note').textContent = saved.recommended ? `每轮 ${mode.rules.roundSize} 题 · 每题 ${questionSeconds(mode, saved.recommended)} 秒` : `先玩 ${mode.levels.length * mode.rules.placementPerLevel} 题，找到适合你的难度`;
-  $('#review-count').textContent = saved.review.length;
-  $('#start-review').disabled = !saved.review.length;
+  $('#start-note').textContent = saved.recommended ? `${selectedTopic || '全部话题'} · 每轮 ${mode.rules.roundSize} 题` : `先练 ${mode.levels.length * mode.rules.placementPerLevel} 题 · 起点测验覆盖全部话题`;
+  const reviewCount = visibleQuestions.filter(q => saved.review.includes(q.id)).length;
+  $('#review-count').textContent = reviewCount;
+  $('#start-review').disabled = !reviewCount;
   $('#retest').hidden = !saved.recommended;
-  $('#home-progress').textContent = saved.learned.length ? `本玩法练过 ${saved.learned.length} / ${mode.questions.length} 个单词 · 完成 ${saved.rounds} 轮` : copy.footer;
+  const learnedCount = visibleQuestions.filter(q => saved.learned.includes(q.id)).length;
+  $('#home-progress').textContent = `${selectedTopic || '全部话题'} · 本玩法练过 ${learnedCount} / ${visibleQuestions.length} 词 · ${copy.footer}`;
 
   // Re-evaluate existing progress after catalogue updates without dropping old records.
   const newlyEarned = evaluateTrophies(saved.trophies, extractTrophyMetrics({
@@ -670,9 +677,9 @@ function start(kind = 'level', level = saved.recommended || mode.levels[0].id) {
   updateDailyQuests();
   let questions;
   if (kind === 'placement') questions = placementRound(Math.random, mode);
-  else if (kind === 'review') questions = shuffle(mode.questions.filter((q) => saved.review.includes(q.id))).slice(0, mode.rules.roundSize);
+  else if (kind === 'review') questions = shuffle(mode.questions.filter((q) => saved.review.includes(q.id) && (!selectedTopic || q.topic === selectedTopic))).slice(0, mode.rules.roundSize);
   else if (kind === 'demo') questions = mode.levels.flatMap((l) => makeRound(l.id, { mode, count: mode.rules.demoPerLevel }));
-  else questions = makeRound(level, { mode, seen: saved.learned });
+  else questions = makeRound(level, { mode, seen: saved.learned, topic: selectedTopic });
   if (!questions.length) { home(); return; }
   Object.assign(S, { questions, kind, level, qi: 0, step: 0, combo: 0, peak: 0, misses: 0, playMs: 0, energy: 0, shownEnergy: 0, energyUnit: 0, E: .08, results: [], demo: kind === 'demo', phase: 'answer', demoSlipped: false });
   actors.forEach((a) => { a.hidden = true; });
@@ -716,7 +723,8 @@ function setupQuestion() {
   setShowLevel();
   audio.key = S.qi === S.questions.length - 1 ? 2 : 0;
   $('#question-number').textContent = `${String(S.qi + 1).padStart(2, '0')} / ${String(S.questions.length).padStart(2, '0')}`;
-  $('#level-tag').textContent = `${levelInfo(q.level).name} · ${mode.label}`;
+  $('#level-tag').textContent = `${levelInfo(q.level).name} · ${q.topic} · ${q.pos}`;
+  $('#word-slots').style.setProperty('--letter-count', q.word.length);
   $('#blank-count').textContent = mode.id === 'spelling' ? `补${q.blanks.length}个字母` : '选一个单词';
   if (mode.id === 'sentence') {
     const [before, after] = q.context.split('____');
@@ -786,7 +794,7 @@ function renderChoices() {
   $('#choices').style.setProperty('--option-font', `${Math.min(25, 110 / longest)}px`);
   $('#choices').innerHTML = options.map((char, i) => `<button class="choice" data-char="${char}" aria-label="选 ${char}，快捷键 ${i + 1}"><small aria-hidden="true">${i + 1}</small>${char}</button>`).join('');
   $('#choices').classList.remove('busy');
-  $('#candidate-speech').innerHTML = $$('.choice').map(b => `<button type="button" class="speaker-btn icon-only" data-speech="${b.dataset.char}" aria-label="朗读 ${b.dataset.char}" title="朗读 ${b.dataset.char}">${speakerIconSVG}</button>`).join('');
+  $('#candidate-speech').innerHTML = $$('.choice').map(b => `<button type="button" class="speaker-btn icon-only" data-speech="${b.dataset.char}" aria-label="朗读 ${b.dataset.char}" title="朗读 ${b.dataset.char}">${speakerIconSVG}${mode.id === 'spelling' ? '' : `<span class="speech-word">听 ${b.dataset.char}</span>`}</button>`).join('');
   const team = actors.filter((a) => !a.hidden);
   actors.forEach((a) => a.classList.toggle('active-actor', a === team[(S.qi + S.step) % team.length]));
   $('#actor-caption').textContent = q.blanks.length > 1 ? `第 ${S.step + 1} 个空格 · 气泡接力中` : copy.stageReady;
@@ -910,9 +918,11 @@ function completeQuestion(skipped = false, timedOut = false) {
   updateTimer();
   $('#answer-area').hidden = true; $('#explanation').hidden = false;
   $('#read-question').hidden = true;
-  $('#answer-word').textContent = q.word; $('#meaning').textContent = q.meaning;
+  $('#answer-word').textContent = q.word; $('#meaning').textContent = `${q.pos} ${q.meaning}`;
   if ($('.explain-heading span')) $('.explain-heading span').textContent = skipped ? (copy.unlearned || '先来认识这个单词') : copy.learned;
-  $('#example').textContent = `试着读一读：${q.context.replace('____', q.word)} ${q.translation}`;
+  $('#example').textContent = `${q.context.replace('____', q.word)}\n${q.translation}`;
+  $('#collocation').textContent = `${q.collocation} · ${q.collocationMeaning}`;
+  $('#use-case').textContent = `G 类场景：${q.useCase}`;
   if (!S.demo && saved.settings.autoSpeak) readExplanation();
   $('#next-question').textContent = S.qi === S.questions.length - 1 ? '这一轮完成啦 →' : '记住啦，下一题 →';
   if (!S.demo) $('#next-question').focus({ preventScroll: true });
@@ -1244,6 +1254,14 @@ function initLogoBurst() {
 initLogoBurst();
 
 const modeSelect = $('#mode-select');
+$('#topic-select').innerHTML = '<option value="">全部话题 · 180 词</option>' + topics.map(topic => `<option value="${topic}">${topic} · 30 词</option>`).join('');
+$('#topic-select').value = selectedTopic;
+$('#topic-select').addEventListener('change', () => {
+  const value = $('#topic-select').value;
+  selectedTopic = topics.includes(value) ? value : '';
+  try { storage?.setItem('softie-ielts-gt:topic', selectedTopic); } catch { /* Storage may be blocked. */ }
+  refreshHome();
+});
 if (modeSelect) {
   modeSelect.innerHTML = Object.values(MODES).map((m) => `<option value="${m.id}">${m.label}</option>`).join('');
   modeSelect.value = mode.id;
@@ -1280,7 +1298,7 @@ function setAudienceMode(newModeId, playFx = true) {
   if (mode.id === newModeId) return;
   cancelRun();
   pendingHammer = null;
-  try { storage?.setItem('softie-english:active-mode', newModeId); } catch {}
+  try { storage?.setItem('softie-ielts-gt:active-mode', newModeId); } catch {}
   mode = getMode(newModeId);
   copy = mode.copy;
   saved = loadSave(storage, mode);
@@ -1630,7 +1648,7 @@ function openResetConfirm() {
 function renderResetConfirm() {
   if (confirmStep === 1) {
     $('#confirm-title').textContent = '全部重置';
-    $('#confirm-msg').innerHTML = '确定要清除此设备上的所有英语练习记录、成就与签到数据吗？<br><small>清除后数据将无法恢复。</small>';
+    $('#confirm-msg').innerHTML = '确定要清除此设备上的所有雅思 G 类练习记录、成就与签到数据吗？<br><small>清除后数据将无法恢复。</small>';
     $('#confirm-no').textContent = '再想想';
     $('#confirm-yes').textContent = '继续重置';
     $('#confirm-yes').className = 'danger-btn';

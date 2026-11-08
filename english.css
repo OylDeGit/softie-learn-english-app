@@ -509,3 +509,38 @@ body[data-question-type="spelling"] .hint-row {
     padding: 5px 18px;
   }
 }
+/* General Training: longer words, sentences and topic-specific practice. */
+.topic-filter { display: flex; align-items: center; gap: 12px; margin: 12px 0 4px; }
+.topic-filter label { font-size: 13px; font-weight: 800; white-space: nowrap; }
+.topic-filter select { flex: 1; min-width: 0; padding: 10px 12px; border: 2px solid var(--ink); border-radius: 12px; background: #fffaf1; color: var(--ink); font: inherit; font-size: 14px; }
+.topic-filter select:focus-visible { outline: 3px solid #3b6bff; outline-offset: 3px; }
+.topic-note { color: #736b78; font-size: 11px; margin: 4px 0 12px; line-height: 1.6; }
+#example { white-space: pre-line; line-height: 1.8; overflow-wrap: anywhere; }
+.usage-card { padding: 12px 14px; margin: 10px 0 16px; background: #eef6f0; border: 1px solid #c6dccf; border-radius: 12px; text-align: left; }
+.usage-card strong { font-size: 12px; color: #317158; }
+.usage-card p { margin: 6px 0; font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.usage-card small { color: #63606e; line-height: 1.6; }
+.explain-top-row { flex-wrap: wrap; }
+.word-pronounce-row { max-width: 100%; min-width: 0; flex-wrap: wrap; }
+#answer-word { font-size: clamp(19px, 5vw, 28px); overflow-wrap: anywhere; }
+#meaning.explain-meaning { white-space: normal !important; text-align: left !important; font-size: 16px !important; letter-spacing: 0 !important; }
+body[data-question-type="spelling"] .word-slots { gap: clamp(2px, .6vw, 6px); }
+body[data-question-type="spelling"] .word-cell { flex: 1 1 0; max-width: 52px; padding: 0; border-radius: 7px; height: clamp(34px, 9vw, 54px); font-size: clamp(12px, calc((100vw - 100px) / var(--letter-count, 8) * .7), 30px); }
+body[data-question-type="meaning"] .word-cell,
+body[data-question-type="sentence"] .word-cell { min-width: 0; max-width: 100%; padding-inline: 14px; font-size: clamp(17px, 4.6vw, 30px); overflow-wrap: anywhere; }
+body[data-question-type="meaning"] .choices,
+body[data-question-type="sentence"] .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body[data-question-type="meaning"] .choice,
+body[data-question-type="sentence"] .choice { font-size: clamp(13px, 3.8vw, 20px); min-width: 0; overflow-wrap: anywhere; padding: 12px 8px 12px 20px; }
+body[data-question-type="meaning"] .candidate-speech,
+body[data-question-type="sentence"] .candidate-speech { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 420px) {
+  .eyebrow { font-size: 11px; letter-spacing: .5px; }
+  .section-label { flex-wrap: wrap; gap: 10px; }
+  .topic-filter { gap: 8px; }
+}
+body[data-question-type="meaning"] .candidate-speech .speaker-btn,
+body[data-question-type="sentence"] .candidate-speech .speaker-btn { width: 100%; max-width: 100%; height: auto; min-height: 36px; border-radius: 10px; padding: 5px 8px; gap: 5px; font-size: 11px; }
+.speech-word { overflow-wrap: anywhere; min-width: 0; }
+.candidate-speech .speaker-icon { flex-shrink: 0; }
+.gt-badge { display: inline-block; margin: 10px 0 0; padding: 5px 10px; border: 1px solid #b7c8dd; border-radius: 999px; background: #edf3ff; color: #375781; font-size: 10px; font-weight: 750; letter-spacing: .5px; }

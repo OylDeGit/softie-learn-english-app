@@ -248,13 +248,13 @@ export function resetAllSaves(storage) {
     if (typeof storage.length === 'number' && typeof storage.key === 'function') {
       for (let i = 0; i < storage.length; i++) {
         const key = storage.key(i);
-        if (key && key.startsWith('softie-english:')) {
+        if (key && key.startsWith('softie-ielts-gt:')) {
           toRemove.push(key);
         }
       }
     } else if (typeof storage.keys === 'function') {
       for (const key of storage.keys()) {
-        if (typeof key === 'string' && key.startsWith('softie-english:')) {
+        if (typeof key === 'string' && key.startsWith('softie-ielts-gt:')) {
           toRemove.push(key);
         }
       }
