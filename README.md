@@ -4,7 +4,9 @@
 
 ## 在线试玩
 
-体验地址：[https://yuanyang749.github.io/softie-learn-english-app/](https://yuanyang749.github.io/softie-learn-english-app/)
+此仓库是基于 [yuanyang749/softie-learn-english-app](https://github.com/yuanyang749/softie-learn-english-app) 的个人非官方部署，保留原作者署名与许可证。
+
+体验地址：[https://oyldegit.github.io/softie-learn-english-app/](https://oyldegit.github.io/softie-learn-english-app/)
 
 ## 快速运行
 
@@ -55,7 +57,7 @@ npm run dev
 - `js/speech.js`：可独立测试的朗读服务。
 - `js/main.js`：沿用原版主流程与演出。
 
-原项目参考提交：`005706b600d2fd0a2c6e108e0066d20f7f993c34`。本项目仓库为 `yuanyang749/softie-learn-english-app`，已配置 GitHub Pages 在线访问。原仓库未修改。
+原项目参考提交：`005706b600d2fd0a2c6e108e0066d20f7f993c34`。本部署仓库为 `OylDeGit/softie-learn-english-app`，已配置 GitHub Pages 在线访问。原仓库未修改。
 
 ## 许可证
 
