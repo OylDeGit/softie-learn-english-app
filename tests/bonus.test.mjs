@@ -62,46 +62,11 @@ test('claimLogin: resets streak when a day is missed without hammer, but continu
   assert.equal(resB.total, 4);
 });
 
-test('daily bonus dialog automatically pops up on app launch when not claimed today', async () => {
-  const save = freshSave();
-  save.settings.motion = false;
-  const f = createApp({ saves: { meaning: save } });
-
-  // Before timer expires, dialog is not yet open
-  assert.equal(f.$('#bonus-dialog').open, false);
-
-  // Advance clock past 500ms
-  await f.advance(600);
-
-  // Dialog must be automatically open!
-  assert.equal(f.$('#bonus-dialog').open, true);
-  assert.equal(f.app.saved.bonus.last, '2026-09-30');
-  assert.equal(f.app.saved.bonus.run, 1);
-  assert.equal(f.app.saved.bonus.stickers['2026-09-30'], 'star');
-
-  // Verify UI content
-  assert.ok(f.$('#bonus-grid').innerHTML.includes('bonus-slot'));
-  assert.ok(f.$('#bonus-grid').innerHTML.includes('today'));
-  assert.ok(f.$('#bonus-note').textContent.includes('6'));
-
-  // Clicking "立即领取" closes dialog and persists
-  f.$('#bonus-ok').click();
-  assert.equal(f.$('#bonus-dialog').open, false);
-  assert.equal(f.stored('meaning').bonus.last, '2026-09-30');
-
-  // After claiming 1st sticker, achievement unlock modal automatically pops up
-  await f.advance(350);
-  assert.equal(f.$('#trophy-got-dialog').open, true);
-  assert.ok(f.$('#tg-list').innerHTML.includes('印章 1 枚'));
-  assert.ok(f.$('#tg-list').innerHTML.includes('在打卡日历上收集 1 枚印章'));
-
-  // Clicking "太棒了！" closes trophy-got-dialog
-  f.$('#tg-ok').click();
-  assert.equal(f.$('#trophy-got-dialog').open, false);
-
-  // Subsequent timer advance does not re-open today
-  await f.advance(1000);
-  assert.equal(f.$('#bonus-dialog').open, false);
+test('daily rewards remain available manually without interrupting launch or starting a trophy popup',async()=>{
+ const save=freshSave();save.settings.motion=false;const f=createApp({saves:{meaning:save}});
+ await f.advance(1000);assert.equal(f.$('#bonus-dialog').open,false);assert.equal(f.app.saved.bonus.last,null);
+ f.$('#open-bonus').click();assert.equal(f.$('#bonus-dialog').open,true);assert.equal(f.app.saved.bonus.last,'2026-09-30');
+ f.$('#bonus-ok').click();await f.advance(1000);assert.equal(f.$('#trophy-got-dialog').open,false);assert.equal(f.stored('meaning').bonus.last,'2026-09-30');
 });
 
 test('topbar bonus button opens review mode when already claimed today, and updates bonus-dot', async () => {

@@ -19,17 +19,17 @@ function memory() {
 }
 
 test('3000 words support full-bank meaning/spelling and 500 authored sentence entries', () => {
-  assert.deepEqual(Object.keys(MODES), ['meaning', 'spelling', 'dictation', 'sentence']);
+  assert.deepEqual(Object.keys(MODES), ['meaning', 'spelling', 'dictation', 'collocation', 'sentence']);
   const all = Object.values(MODES).flatMap(mode => mode.questions);
-  assert.equal(all.length, 9500);
-  assert.equal(new Set(all.map(q => q.id)).size, 9500);
+  assert.equal(all.length, 10000);
+  assert.equal(new Set(all.map(q => q.id)).size, 10000);
   for (const mode of Object.values(MODES)) {
-    const expected = mode.id === 'sentence' ? 500 : 3000;
+    const expected = ['sentence','collocation'].includes(mode.id) ? 500 : 3000;
     assert.equal(mode.questions.length, expected);
     assert.equal(new Set(mode.questions.map(q => q.word)).size, expected);
-    for (const level of mode.levels) assert.ok(mode.id === 'sentence' ? mode.questions.filter(q => q.level === level.id).length >= 60 : mode.questions.filter(q => q.level === level.id).length === 1000);
+    for (const level of mode.levels) assert.ok(['sentence','collocation'].includes(mode.id) ? mode.questions.filter(q => q.level === level.id).length >= 60 : mode.questions.filter(q => q.level === level.id).length === 1000);
     const topics = new Set(mode.questions.map(q => q.topic));
-    assert.equal(topics.size, mode.id === 'sentence' ? 6 : 7);
+    assert.equal(topics.size, ['sentence','collocation'].includes(mode.id) ? 6 : 7);
     for (const topic of topics) assert.ok(mode.questions.filter(q => q.topic === topic).length >= 30);
     for (const q of mode.questions) {
       assert.equal(q.id, `${mode.id}:word-${q.word}`);
@@ -49,7 +49,7 @@ test('3000 words support full-bank meaning/spelling and 500 authored sentence en
       assert.equal(q.blanks.length, mode.id === 'spelling' && q.level === 3 ? 2 : 1);
       assert.equal(new Set(q.blanks).size, q.blanks.length);
       assert.ok(q.blanks.every(i => i >= 0 && i < q.parts.length));
-      assert.equal(q.parts.join(''), q.word);
+      assert.equal(q.parts.join(''), q.targetAnswer||q.word);
     }
   }
 });

@@ -98,7 +98,7 @@ test('unsupported browser is a nonblocking capability message', async () => {
 
 test('app pauses thinking during speech, ducks only music, and restores it after completion', async () => {
   const synth = browser(); const f = createApp({ speechOptions: { synth, Utterance } });
-  f.app.start('level', 1);
+  f.app.start('challenge', 1);
   const budget = f.app.scene.timeLeft;
   assert.equal(f.app.speech.busy, true);
   await f.advance(4000); assert.equal(f.app.scene.timeLeft, budget); assert.equal(f.app.scene.playMs, 0);
@@ -144,7 +144,7 @@ test('manual speech is available with automatic reading disabled', () => {
 
 test('backgrounding cancels speech and excludes hidden elapsed time', async () => {
   const synth = browser(); const f = createApp({ speechOptions: { synth, Utterance } });
-  f.app.start('level', 1); const budget = f.app.scene.timeLeft;
+  f.app.start('challenge', 1); const budget = f.app.scene.timeLeft;
   f.document.hidden = true; f.documentEvents.visibilitychange();
   assert.equal(f.app.speech.busy, false); assert.equal(f.musicGains.at(-1), 0.8);
   await f.advance(60000); assert.equal(f.app.scene.timeLeft, budget);
@@ -154,7 +154,7 @@ test('backgrounding cancels speech and excludes hidden elapsed time', async () =
 
 test('an unresponsive browser releases the app countdown after the speech watchdog', async () => {
   const synth = browser(); const f = createApp({ speechOptions: { synth, Utterance } });
-  f.app.start('level', 1); const budget = f.app.scene.timeLeft;
+  f.app.start('challenge', 1); const budget = f.app.scene.timeLeft;
   await f.advance(15000); assert.equal(f.app.speech.busy, false); assert.equal(f.app.scene.timeLeft, budget);
   await f.advance(1000); assert.equal(f.app.scene.timeLeft, budget - 1000);
   assert.equal(f.musicGains.at(-1), 0.8);

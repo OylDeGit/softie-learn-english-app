@@ -19,6 +19,7 @@ test('hammer confirmation repairs the offered gap once and unlocks its trophy', 
   const save = freshSave(); save.settings.motion = false;
   save.history = [{ day: '2026-09-27' }, { day: '2026-09-28' }];
   const f = createApp({ saves: { meaning: save } });
+  assert.equal(f.$('#hammer-dialog').open,false);f.$('#open-calendar').click();
   assert.equal(f.$('#hammer-dialog').open, true);
   f.$('#hammer-yes').click();
   assert.equal(f.app.saved.calendar.hammers, 0);
@@ -114,7 +115,8 @@ test('declining or confirming a stale hammer offer never spends items', () => {
   for (const stale of [false, true]) {
     const save = freshSave(); save.history = [{ day: '2026-09-28' }];
     const f = createApp({ saves: { meaning: save } });
-    assert.equal(f.$('#hammer-dialog').open, true);
+    assert.equal(f.$('#hammer-dialog').open,false);f.$('#open-calendar').click();
+  assert.equal(f.$('#hammer-dialog').open, true);
     if (stale) { f.setDate(new Date(2026, 9, 1)); f.$('#hammer-yes').click(); }
     else { f.$('#hammer-no').click(); f.app.home(); assert.equal(f.$('#hammer-dialog').open, false); }
     assert.equal(f.app.saved.calendar.hammers, 1);
@@ -141,12 +143,12 @@ test('pausing excludes time from speed achievements and recorded learning time',
   assert.equal(f.app.scene.playMs, 1000);
 });
 
-test('hinted or retried rounds keep completion score without earning a perfect', async () => {
+test('hinted or retried rounds show first-attempt accuracy without earning a perfect', async () => {
   for (const options of [{ hint: true }, { wrong: true }]) {
     const save = questSave('2026-09-30');
     save.quests.list[2] = { id: 'perfect1', goal: 1, prog: 0, done: false };
     const f = createApp({ saves: { meaning: save } }); f.app.start('level', 1); await f.round(options);
-    assert.equal(f.app.saved.history[0].score, 100);
+    assert.equal(f.app.saved.history[0].score, 0);
     assert.equal(f.app.saved.stats.perfects, 0);
     assert.equal(f.app.saved.quests.list[2].done, false);
     assert.equal(f.app.saved.stats.misses, options.wrong ? 8 : 0);
@@ -223,7 +225,7 @@ test('explanation card heading dynamically adapts for correct answer vs timeout 
 
   // 2. Children mode: timeout -> 先来认识这个新单词
   const fc2 = createApp({ mode: 'meaning' });
-  fc2.app.start('level', 1);
+  fc2.app.start('challenge', 1);
   await fc2.advance(45000); // 40s timeout
   assert.equal(fc2.$('.explain-heading span').textContent, '先来认识这个新单词');
 
@@ -235,7 +237,7 @@ test('explanation card heading dynamically adapts for correct answer vs timeout 
 
   // 4. Adult mode: timeout -> 先来认识这个新单词
   const fa2 = createApp({ mode: 'spelling' });
-  fa2.app.start('level', 1);
+  fa2.app.start('challenge', 1);
   await fa2.advance(45000); // 40s timeout
   assert.equal(fa2.$('.explain-heading span').textContent, '先来认识这个新单词');
 });

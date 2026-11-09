@@ -103,7 +103,7 @@ function createAudioHarness({ soundEnabled = true, volume = 0.8 } = {}) {
 
   let clock = 100;
   const context = vm.createContext({
-    normalizeDictation, spellingFeedback, dictationMatches, initStudyTools: () => ({refresh(){},record(){},round(){return []}}), ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, SpeechReader,
+    normalizeDictation, spellingFeedback, dictationMatches, initStudyTools: () => ({refresh(){},record(){},round(){return []},saveMode:(mode,save)=>storage.persistSave(localStorage,save,mode),status:()=>''}), ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, SpeechReader,
     dayKey: () => '2026-10-01',
     currentStreak: () => 0,
     hammerOffer: () => null,

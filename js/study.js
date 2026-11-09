@@ -13,14 +13,16 @@ export function learnedVocabulary(storage) {
   return ids;
 }
 export function dailySummary(mode, save, plan, {topic = '', now = Date.now()} = {}) {
-  const due = reviewPool(mode, save, {topic, now});
+  const due = reviewPool(mode, save, {topic, now,autoOnly:true});
   const effectiveGoal = due.length > 40 ? 0 : due.length > 20 ? Math.min(plan.goal, 5) : plan.goal;
   return {due, effectiveGoal, remaining: Math.max(0, effectiveGoal - plan.newWords.length)};
 }
 export function dailyRound(mode, save, plan, {topic = '', level = 1, learned = new Set(), now = Date.now(), rng = Math.random} = {}) {
   const {due, remaining} = dailySummary(mode, save, plan, {topic, now});
   const reviews = weightedSample(due, Math.min(8, due.length), q => learningWeight(q, save.wordStats, now), rng);
-  const fresh = mode.questions.filter(q => q.level === level && (!topic || q.topic === topic) && !learned.has(q.vocabId) && !save.learned.includes(q.id));
+  const fresh = mode.questions.filter(q => q.level === level && (!topic || q.topic === topic) && !save.learned.includes(q.id));
+  const skillPractice=mode.id!=='meaning'?fresh.filter(q=>learned.has(q.vocabId)):[];
+  if(skillPractice.length)return [...reviews,...weightedSample(skillPractice,8-reviews.length,frequencyWeight,rng)];
   const count = Math.min(remaining, reviews.length ? Math.max(0, 8 - reviews.length) : 8);
   return [...reviews, ...weightedSample(fresh, count, frequencyWeight, rng)];
 }

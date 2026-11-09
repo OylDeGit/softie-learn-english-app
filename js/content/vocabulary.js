@@ -1,3 +1,5 @@
+import { reviewContext } from './context-review.js';
+import { languageSupport, collocationTask } from './language-support.js';
 import { SCENARIO_EXPANSION } from './scenario-expansion.js';
 import { VOCABULARY as AUTHORED, TOPICS as AUTHORED_TOPICS } from './curated.js';
 import { EXTENDED_VOCABULARY, CURATED_FREQUENCIES } from './extended.js';
@@ -5,7 +7,10 @@ import { EXTENDED_VOCABULARY, CURATED_FREQUENCIES } from './extended.js';
 // All 3000 words support recognition and spelling; 500 authored examples support sentence practice.
 export const CURATED_VOCABULARY = AUTHORED.map(v => ({ ...v, source: '原创精练', frequencyRank: CURATED_FREQUENCIES[v.word] || 0 }));
 const scenes = new Map(SCENARIO_EXPANSION.map(v => [v.word, v]));
-const entries = [...CURATED_VOCABULARY, ...EXTENDED_VOCABULARY.map(v => ({...v, ...scenes.get(v.word)}))];
+const entries = [...CURATED_VOCABULARY, ...EXTENDED_VOCABULARY.map(v => ({...v, ...scenes.get(v.word)}))].map(v => {
+  const row=reviewContext(v);
+  return {...row, ...languageSupport(v.word), ...(v.context?{collocationTask:collocationTask(row)}:{})};
+});
 export const TOPICS = [...AUTHORED_TOPICS, '通用表达'];
 const buckets = new Map();
 for (const entry of entries) {

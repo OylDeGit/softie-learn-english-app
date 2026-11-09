@@ -19,5 +19,13 @@
     "社区与环境": 164,
     "学习与沟通": 208,
     "通用表达": 2047
+  },
+  "contextChecked": 500,
+  "practiceQuestions": {
+    "meaning": 3000,
+    "spelling": 3000,
+    "dictation": 3000,
+    "collocation": 500,
+    "sentence": 500
   }
 }

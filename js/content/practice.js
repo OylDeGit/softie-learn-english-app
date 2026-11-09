@@ -1,3 +1,5 @@
+import { LONG_READINGS, ENGLISH_READING_PROMPTS, ENGLISH_READING_OPTIONS } from './advanced-practice.js';
+export { OPINIONS } from './advanced-practice.js';
 // Original mini exercises. These are study materials, not official test papers.
 const letters = [
 ['维修请求','正式','向房东说明厨房漏水，解释影响，并提出上门时间。',['说明漏水位置与开始时间','解释生活受到的影响','提出两个可上门的时段'],'Dear Mr Harris,','Yours sincerely,','I am writing to report a leak under the kitchen sink. It started yesterday and has made the cupboard unusable. Could you arrange a repair on Tuesday morning or Thursday afternoon?','report a leak · arrange a repair · at your earliest convenience'],
@@ -22,7 +24,8 @@ const readings=[
 {title:'健身中心会员',type:'生活 · 服务条款',text:'Off-peak membership at Elm Sports Centre costs £24 per month and allows entry from 9 a.m. to 4 p.m., Monday to Friday. It does not include weekends or public holidays. Members may use the gym and swimming pool, but instructor-led classes cost extra. To cancel, give written notice before the 15th of the month; membership will end on the last day of that month. Notices received on or after the 15th take effect at the end of the following month. A temporary suspension is available for medical reasons with a doctor’s letter.',questions:[['非高峰会员可以何时入场？',['周六上午','工作日 10 a.m.','工作日 6 p.m.'],1,'许可时段为 Monday to Friday 的 9 a.m. 至 4 p.m.。'],['6 月 15 日收到取消通知，会员何时结束？',['6 月 15 日','6 月 30 日','7 月 31 日'],2,'on or after the 15th，生效日在 following month 的月末。'],['教练课程已包含在月费中。',['True','False','Not Given'],1,'instructor-led classes cost extra。']]},
 {title:'社区维修咖啡馆',type:'通用阅读 · 社区服务',text:'At the monthly Repair Cafe, volunteers help residents mend small household items such as lamps, clothes and bicycles. Visitors stay with their items and work alongside the volunteers, so they can learn basic repair skills. There is no fixed charge, although donations help cover the cost of tools and room hire. Replacement parts must be paid for by the item’s owner. Because the team has limited time, each visitor may bring only one item. The cafe cannot accept large appliances such as washing machines. Items that cannot be repaired should be taken home rather than left at the venue.',questions:[['访客应怎样参与维修？',['放下物品后离开','和志愿者一起维修','只观看线上演示'],1,'stay with their items and work alongside the volunteers。'],['更换零件由谁付款？',['物品主人','志愿者','场地方'],0,'Replacement parts must be paid for by the item’s owner。'],['所有物品都保证能修好。',['True','False','Not Given'],1,'Items that cannot be repaired 说明存在无法修好的物品。']]}
 ];
-export const READINGS=readings.map((v,i)=>({...v,id:`reading-${i+1}`,questions:v.questions.map(([prompt,options,answer,explanation])=>({prompt,options,answer,explanation}))}));
+const SHORT_READINGS=readings.map((v,i)=>({...v,id:`reading-${i+1}`,questions:v.questions.map(([prompt,options,answer,explanation],j)=>({prompt:ENGLISH_READING_PROMPTS[i][j],hintZh:prompt,options:ENGLISH_READING_OPTIONS[i][j]||options,answer,explanation}))}));
+export const READINGS = [...SHORT_READINGS,...LONG_READINGS];
 export function draftChecks(text) {
   const words=(text.trim().match(/[A-Za-z]+(?:['’-][A-Za-z]+)*/g)||[]).length;
   return {words,sentences:(text.match(/[.!?]+(?:\s|$)/g)||[]).length};

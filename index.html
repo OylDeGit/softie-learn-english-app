@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="show.css">
   <link rel="stylesheet" href="english.css">
   <link rel="stylesheet" href="mobile-study.css">
+  <link rel="stylesheet" href="study-next.css">
   <script type="module" src="js/main.js"></script>
 </head>
 
@@ -78,37 +79,12 @@
           <div class="stage-floor"></div>
         </div>
       </div>
-      <div class="section-label">
-        <h2>也可以，自己选一站</h2>
-        <div id="mode-toggle" class="mode-toggle" role="radiogroup" aria-label="游戏模式">
-          <button type="button" class="mode-pill active" data-mode="meaning" role="radio" aria-checked="true">
-            <span class="mode-emoji" aria-hidden="true">🍭</span>
-            <span>识义</span>
-          </button>
-          <button type="button" class="mode-pill" data-mode="spelling" role="radio" aria-checked="false">
-            <svg class="mode-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M11.5 2 L5.5 10.5 H10 L8.5 18 L15.5 8.5 H10.5 Z" fill="#ffd86b" stroke="#302238" stroke-width="1.8" stroke-linejoin="round"/>
-            </svg>
-            <span>补字母</span>
-          </button>
-          <button type="button" class="mode-pill" data-mode="dictation" role="radio" aria-checked="false"><span aria-hidden="true">🎧</span><span>听写</span></button>
-          <button type="button" class="mode-pill" data-mode="sentence" role="radio" aria-checked="false">
-            <span class="mode-emoji" aria-hidden="true">🌟</span><span>填词</span>
-          </button>
-        </div>
-        <select id="mode-select" class="sr-only" aria-hidden="true" tabindex="-1">
-          <option value="meaning">单词识义</option>
-          <option value="spelling">单词拼写</option>
-          <option value="dictation">完整听写</option>
-          <option value="sentence">情境填词</option>
-        </select>
-      </div>
-      <p id="mode-coverage" class="mode-coverage">词义辨析 · 3000 词 · 全词库练习</p>
       <section class="daily-plan" aria-labelledby="daily-title">
-        <div class="daily-head"><h2 id="daily-title">今天学一点</h2><label>新词目标<select id="daily-goal" aria-label="每日新词目标"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>30</option></select></label></div>
+        <div class="daily-head"><h2 id="daily-title">今天的 30 分钟</h2><label>新词目标<select id="daily-goal" aria-label="每日新词目标"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>30</option></select></label></div>
         <label class="daily-level-label">新词难度<select id="daily-level"><option value="1">基础</option><option value="2" selected>核心</option><option value="3">进阶</option></select></label>
+        <ol id="daily-stage-list" class="daily-stages" aria-label="每日四步"></ol>
         <p id="daily-summary" role="status"></p><progress id="daily-progress" max="10" value="0" aria-label="今日新词完成进度"></progress>
-        <button id="start-daily" class="primary">开始今日学习 →</button><p id="daily-note" class="topic-note"></p><p id="study-status" role="status" aria-live="polite"></p>
+        <button id="start-daily" class="primary">开始今日学习 →</button><p id="daily-note" class="topic-note"></p><p id="learning-summary" class="learning-summary"></p><p id="save-status" role="status" class="save-status">已自动保存在此浏览器</p><button id="backup-reminder" class="backup-reminder" hidden>已有 7 天未备份，建议保存一次进度 →</button><p id="study-status" role="status" aria-live="polite"></p>
       </section>
       <button id="start-placement" class="big-btn start-button"><span id="start-label">个性化闯关</span><small
           id="start-note">先玩六题，轻松找起点</small></button>
@@ -179,6 +155,34 @@
       </div>
 
       <h2 class="free-heading">自由练习</h2>
+      <div class="section-label">
+        <h2>也可以，自己选一站</h2>
+        <div id="mode-toggle" class="mode-toggle" role="radiogroup" aria-label="游戏模式">
+          <button type="button" class="mode-pill active" data-mode="meaning" role="radio" aria-checked="true">
+            <span class="mode-emoji" aria-hidden="true">🍭</span>
+            <span>识义</span>
+          </button>
+          <button type="button" class="mode-pill" data-mode="spelling" role="radio" aria-checked="false">
+            <svg class="mode-svg" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M11.5 2 L5.5 10.5 H10 L8.5 18 L15.5 8.5 H10.5 Z" fill="#ffd86b" stroke="#302238" stroke-width="1.8" stroke-linejoin="round"/>
+            </svg>
+            <span>补字母</span>
+          </button>
+          <button type="button" class="mode-pill" data-mode="dictation" role="radio" aria-checked="false"><span aria-hidden="true">🎧</span><span>听写</span></button>
+          <button type="button" class="mode-pill" data-mode="collocation" role="radio" aria-checked="false"><span aria-hidden="true">🔗</span><span>搭配</span></button>
+          <button type="button" class="mode-pill" data-mode="sentence" role="radio" aria-checked="false">
+            <span class="mode-emoji" aria-hidden="true">🌟</span><span>填词</span>
+          </button>
+        </div>
+        <select id="mode-select" class="sr-only" aria-hidden="true" tabindex="-1">
+          <option value="meaning">单词识义</option>
+          <option value="spelling">单词拼写</option>
+          <option value="dictation">完整听写</option>
+          <option value="sentence">情境填词</option>
+        </select>
+      </div>
+      <p id="mode-coverage" class="mode-coverage">词义辨析 · 3000 词 · 全词库练习</p>
+
       <div class="topic-filter">
         <label for="topic-select">练习话题</label>
         <select id="topic-select" aria-describedby="topic-note"><option value="">全部话题 · 3000 词</option></select>
@@ -188,12 +192,13 @@
       <p id="strategy-note" class="topic-note"></p>
       <div id="levels" class="level-list" aria-label="选择难度"></div>
       <div class="home-actions">
-        <button id="start-review" class="sub-btn" disabled>复习词汇 <span id="review-count">0</span></button>
+        <button id="start-review" class="sub-btn" disabled>立即重练 <span id="review-count">0</span></button>
+        <button id="start-challenge" class="sub-btn">限时挑战</button>
         <button id="start-demo" class="sub-btn">泡泡秀演示 <span aria-hidden="true">▷</span></button>
       </div>
       <p id="review-summary" class="topic-note"></p>
 
-      <div class="study-links"><button id="open-letters" class="sub-btn">书信片段 · 12 场景</button><button id="open-reading" class="sub-btn">短文阅读 · 6 篇</button><button id="open-backup" class="sub-btn">备份 / 导入进度</button></div>
+      <div class="study-links"><button id="open-letters" class="sub-btn">书信片段 · 12 场景</button><button id="open-reading" class="sub-btn">阅读练习 · 8 篇</button><button id="open-opinions" class="sub-btn">观点段落 · 6 主题</button><button id="open-language" class="sub-btn">词族 / 同义改写</button><button id="open-backup" class="sub-btn">备份 / 导入进度</button></div>
       <button id="open-wordbook" class="wordbook-open">查看 / 搜索 3000 词词表</button>
       <p id="home-progress" class="footnote">不用赶时间，答错也没关系。</p>
       <button id="retest" class="quiet-button" hidden>重新测测起点</button>
@@ -203,6 +208,7 @@
       <div class="play-top"><button id="exit-game" class="text-button">← 返回</button>
         <h1 id="play-title">萌芽小站</h1><span id="question-number">01 / 08</span>
       </div>
+      <p id="learning-time-note" class="learning-time-note">学习模式 · 不限时</p>
       <div class="arcade-hud">
         <div class="hud-top">
           <div id="pips" class="pips" aria-label="本局进度"></div>
@@ -261,7 +267,7 @@
         <p id="feedback" class="feedback" role="status" aria-live="polite">让软乎乎把选中的答案送过去吧。</p>
       </article>
       <div id="answer-area">
-        <form id="dictation-form" class="dictation-form" hidden><label for="dictation-input">听音后输入完整单词</label><div class="dictation-row"><input id="dictation-input" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="40" aria-describedby="dictation-diff"><button id="dictation-submit" type="submit" class="primary">提交</button></div><p id="dictation-diff" role="status" aria-live="polite"></p><p class="topic-note">点击题目旁的扬声器可重听。接受常见英美拼写；可在设置中调整朗读速度。</p></form>
+        <form id="dictation-form" class="dictation-form" hidden><label id="dictation-label" for="dictation-input">听音后输入完整单词</label><div class="dictation-row"><input id="dictation-input" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="done" maxlength="40" aria-describedby="dictation-diff"><button id="dictation-submit" type="submit" class="primary">提交</button></div><p id="dictation-diff" role="status" aria-live="polite"></p><p id="dictation-help" class="topic-note">点击题目旁的扬声器可重听。接受常见英美拼写；可在设置中调整朗读速度。</p></form>
         <p class="choice-note">点一个答案，发射气泡 <span>键盘 1—4 也可以</span></p>
         <div id="choices" class="choices" aria-label="候选答案"></div>
         <div id="candidate-speech" class="candidate-speech" aria-label="朗读候选答案"></div>
@@ -282,6 +288,7 @@
         </div>
         <p id="example" class="example"></p>
         <div id="usage-card" class="usage-card"><strong>常用搭配</strong><p id="collocation"></p><small id="use-case"></small></div>
+        <p id="skill-status" class="skill-status"></p><details id="other-senses" hidden><summary>其他词义与词性</summary><p id="other-senses-text"></p></details><div id="word-family" class="language-note" hidden><strong>词族与词形</strong><p id="word-family-text" lang="en"></p></div><div id="word-paraphrase" class="language-note" hidden><strong>语境改写</strong><p id="word-paraphrase-text"></p></div>
         <p id="word-source" class="word-source"></p>
         <p id="schedule-note" class="schedule-note" hidden></p>
         <button id="next-question" class="primary">记住啦，下一题 <span aria-hidden="true">→</span></button>
@@ -299,7 +306,7 @@
       <div class="quest-mini" id="r-quests"></div>
       <button id="result-start" class="primary">再来一轮 <span aria-hidden="true">→</span></button>
       <button id="result-review" class="secondary" hidden>再练一练 · 待复习单词</button>
-      <button id="result-home" class="text-button">回到文字游乐场</button>
+      <button id="result-home" class="text-button">回到学习首页</button>
     </section>
     <section id="settings" class="screen settings-screen" aria-labelledby="settings-title" hidden>
       <div class="settings-heading"><button id="close-settings" class="text-button">← 返回首页</button><span
@@ -366,7 +373,7 @@
   <p id="storage-note" class="storage-note" role="status" hidden>浏览器未能保存记录，本次仍可继续玩。</p>
 
   <dialog id="leave-dialog" aria-labelledby="leave-title">
-    <h2 id="leave-title">要回到游乐场吗？</h2>
+    <h2 id="leave-title">返回学习首页吗？</h2>
     <p>已完成题目的学习记录会保留，这一轮不会算作完成。</p>
     <div class="dialog-actions"><button id="keep-playing" class="secondary">继续玩</button><button id="leave-confirm"
         class="primary">回到首页</button></div>
@@ -376,7 +383,7 @@
 
   <dialog id="wordbook-dialog" class="wordbook-dialog" aria-labelledby="wordbook-title">
     <div class="wordbook-head"><h2 id="wordbook-title">3000 词词表</h2><button type="button" id="close-wordbook" aria-label="关闭词表">✕</button></div>
-    <p class="wordbook-summary">识义 / 拼写 3000 词 · 原创语境精练 500 词</p>
+    <p class="wordbook-summary">识义 / 听写 3000 词 · 语境 / 搭配 500 词</p>
     <label class="sr-only" for="wordbook-search">搜索英文或中文释义</label>
     <input id="wordbook-search" type="search" placeholder="搜索单词、中文或搭配，例如 refund / 退款" autocomplete="off">
     <div class="wordbook-filters">
@@ -608,6 +615,7 @@
       <button type="button" id="confirm-yes" class="danger-btn">继续重置</button>
     </div>
   </dialog>
+  <nav id="study-nav" class="study-nav" aria-label="学习导航"><button id="nav-today" aria-label="今日学习"><span aria-hidden="true">◷</span>今日</button><button id="nav-wordbook" aria-label="打开词表"><span aria-hidden="true">Aa</span>词表</button><button id="nav-mistakes" aria-label="打开错题"><span aria-hidden="true">↻</span>错题</button><button id="nav-my" aria-label="我的学习"><span aria-hidden="true">☷</span>我的</button></nav>
   <noscript>请开启 JavaScript，和软乎乎一起玩英语。</noscript>
 </body>
 

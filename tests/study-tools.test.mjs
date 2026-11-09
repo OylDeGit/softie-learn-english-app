@@ -56,9 +56,9 @@ test('500 authored contexts retain the 3000-word catalogue and cover each practi
  for(const topic of new Set(SCENARIO_EXPANSION.map(v=>v.topic)))assert.ok(SCENARIO_EXPANSION.filter(v=>v.topic===topic).length>=35);
 });
 test('mini practice has complete answer evidence and no invented IELTS score',()=>{
- assert.equal(LETTERS.length,12);assert.equal(READINGS.length,6);assert.equal(new Set(LETTERS.map(v=>v.register)).size,3);
+ assert.equal(LETTERS.length,12);assert.equal(READINGS.length,8);assert.equal(new Set(LETTERS.map(v=>v.register)).size,3);
  for(const q of LETTERS)assert.equal(q.points.length,3);
- for(const p of READINGS){assert.ok(p.text.split(/\s+/).length>=70);assert.equal(p.questions.length,3);for(const q of p.questions){assert.ok(q.options[q.answer]);assert.ok(q.explanation.length>10);}}
+ for(const p of READINGS){assert.ok(p.text.split(/\s+/).length>=70);assert.ok(p.questions.length===3||p.questions.length===5);for(const q of p.questions){assert.ok(q.options[q.answer]);assert.ok(q.explanation.length>10);}}
  assert.deepEqual(draftChecks('I am writing to request a refund. Could you help me?'),{words:11,sentences:2});
 });
 

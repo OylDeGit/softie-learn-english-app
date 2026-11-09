@@ -106,7 +106,7 @@ const motionValue = () => {
   }
   return 1;
 };
-const reduced = () => motionValue() <= 0.001;
+const reduced = () => motionValue() <= 0.001 || (S.kind==='daily' && S.screen==='play');
 const paused = () => document.hidden || S.screen === 'settings' || $('#leave-dialog').open || $$('dialog[open]').length > 0;
 const activeQuestion = () => S.questions[S.qi];
 const levelInfo = (level) => mode.levels.find((l) => l.id === level);
@@ -160,7 +160,7 @@ function startHomeMusic() {
   audio.startMusic();
 }
 
-function persist() { $('#storage-note').hidden = persistSave(storage, saved, mode); }
+function persist() { const ok=studyTools?studyTools.saveMode(mode,saved):persistSave(storage,saved,mode); $('#storage-note').hidden=ok; }
 function later(fn, ms) {
   const run = S.run;
   const id = setTimeout(() => { timers.delete(id); if (run === S.run) fn(); }, ms);
@@ -445,7 +445,8 @@ function renderCalendar() {
   updateActionBadges();
 }
 
-function checkHammer() {
+function checkHammer(manual=false) {
+  if(!manual)return;
   const offer = hammerOffer(saved.calendar, saved.history);
   if (offer && offer.hammersNeeded > 0) {
     const dialog = $('#hammer-dialog');
@@ -554,9 +555,7 @@ function closeBonus() {
   if (newlyEarned.length) {
     persist();
     if ($('#trophy-badge')) $('#trophy-badge').textContent = `${getEarnedTrophiesCount(saved.trophies)} / ${TROPHIES.length}`;
-    setTimeout(() => {
-      showEarnedTrophies();
-    }, 280);
+    // Keep new achievements in the trophy catalogue without another popup.
   }
 }
 
@@ -569,25 +568,7 @@ function claimAndOpenBonus() {
   }
 }
 
-function checkLoginBonus() {
-  if (S.demo || S.screen !== 'home' || S.bonusOpen || $$('dialog[open]').length) return;
-  if (saved.bonus?.last === dayKey()) return;
-  const hammerDialog = $('#hammer-dialog');
-  if (hammerDialog?.open) return;
-  const guideDialog = $('#guide-dialog');
-  if (guideDialog?.open) return;
-  const settingsDialog = $('#settings-dialog');
-  if (settingsDialog?.open) return;
-
-  clearTimeout(bonusTimer);
-  bonusTimer = setTimeout(() => {
-    if (S.demo || S.screen !== 'home' || S.bonusOpen || $$('dialog[open]').length) return;
-    if (saved.bonus?.last === dayKey()) return;
-    const h = $('#hammer-dialog');
-    if (h?.open) return;
-    claimAndOpenBonus();
-  }, 500);
-}
+function checkLoginBonus() { updateActionBadges(); }
 
 function renderTrophiesModal(filter = 'all') {
   const dialog = $('#trophy-dialog');
@@ -646,7 +627,7 @@ function refreshHome() {
   if (!modeTopics.includes(selectedTopic)) selectedTopic = '';
   $('#topic-select').innerHTML = `<option value="">全部话题 · ${mode.questions.length} 词</option>` + modeTopics.map(topic => `<option value="${topic}">${topic} · ${mode.questions.filter(q => q.topic === topic).length} 词</option>`).join('');
   $('#topic-select').value = selectedTopic;
-  $('#mode-coverage').textContent = `${mode.label} · ${mode.questions.length} 词${mode.id === 'sentence' ? ' · 含原创例句与搭配' : ' · 全词库练习'}`;
+  $('#mode-coverage').textContent = `${mode.label} · ${mode.questions.length} 词${['sentence','collocation'].includes(mode.id) ? ' · 含原创例句与搭配' : ' · 全词库练习'}`;
   $('#topic-note').textContent = '各话题按实际收录量显示 · 起点测验覆盖全部话题';
   const visibleQuestions = mode.questions.filter(q => !selectedTopic || q.topic === selectedTopic);
   $('#levels').innerHTML = mode.levels.map((l) => {
@@ -682,7 +663,10 @@ function refreshHome() {
   checkLoginBonus();
 }
 function home() {
-  cancelRun(); S.demo = false; S.E = .02;
+  document.body.dataset.studyKind='';
+  if(S.kind==='daily'&&S.screen==='play')studyTools?.checkpoint(S);
+  cancelRun();
+  if(S.dailyModeBefore){ mode=getMode(S.dailyModeBefore);copy=mode.copy;saved=loadSave(storage,mode);S.dailyModeBefore=null;syncModePills();updateAudienceUI();applySettings(); } S.demo = false; S.E = .02;
   setShowLevel();
   fx.parts = []; fxBack.parts = [];
   if (saved.settings?.sound && !audio.muted) {
@@ -693,17 +677,19 @@ function home() {
   $('#open-settings').disabled = false;
   refreshHome(); showScreen('home'); $('#start-placement').focus({ preventScroll: true });
 }
-function start(kind = 'level', level = saved.recommended || mode.levels[0].id) {
+function start(kind = 'level', level = saved.recommended || mode.levels[0].id, overrideQuestions = null) {
+  if(kind==='daily'){studyTools.begin();return;}
+  S.dailyModeBefore=null;document.body.dataset.studyKind=kind;
   cancelRun(); audio.unlock();
   updateDailyQuests();
   let questions;
-  if (kind === 'daily') questions = studyTools.round(mode, saved, {topic:selectedTopic,level});
+  if(overrideQuestions)questions=overrideQuestions;
   else if (kind === 'placement') questions = placementRound(Math.random, mode);
   else if (kind === 'review') questions = selectReviewRound(mode, saved, { topic: selectedTopic, strategy: practiceStrategy, now: Date.now() });
   else if (kind === 'demo') questions = mode.levels.flatMap((l) => makeRound(l.id, { mode, count: mode.rules.demoPerLevel }));
   else questions = makeRound(level, { mode, seen: saved.learned, topic: selectedTopic, strategy: practiceStrategy, stats: saved.wordStats, now: Date.now() });
   if (!questions.length) { home(); return; }
-  Object.assign(S, { questions, kind, level, qi: 0, step: 0, combo: 0, peak: 0, misses: 0, playMs: 0, energy: 0, shownEnergy: 0, energyUnit: 0, E: .08, results: [], demo: kind === 'demo', phase: 'answer', demoSlipped: false });
+  Object.assign(S, { questions, kind, level, qi: 0, step: 0, combo: 0, peak: 0, misses: 0, playMs: 0, energy: 0, shownEnergy: 0, energyUnit: 0, E: .08, results: [], timed:kind==='challenge', demo: kind === 'demo', phase: 'answer', demoSlipped: false });
   actors.forEach((a) => { a.hidden = true; });
   $('#open-settings').disabled = S.demo;
   $('#play-title').textContent = S.demo ? '跟着气泡小队玩一轮' : kind === 'placement' ? '测测起点 · 不用紧张' : kind === 'daily' ? '今日学习' : kind === 'review' ? '再练一练' : `${levelInfo(level).name}${copy.stationSuffix}`;
@@ -726,10 +712,13 @@ function updateEnergy() {
   $('#hud-misses').textContent = S.misses;
 }
 function setupQuestion() {
+  if(S.kind==='daily'){const next=S.questions[S.qi];mode=getMode(next.type);copy=mode.copy;saved=loadSave(storage,mode);applySettings();}
   speech.cancel();
   $('#tts-note').textContent = '';
   document.body.dataset.questionType = mode.id;
   const q = activeQuestion();
+  S.answerToken=S.kind==='daily'?studyTools.token(S.qi):`free-${Date.now()}-${S.run}-${S.qi}-${Math.random().toString(36).slice(2,7)}`;
+  S.questionStartedAt=performance.now();S.questionThinkingMs=0;
   Object.assign(S, { step: 0, firstTry: true, stepMisses: 0, questionMisses: S.misses, phase: 'answer', ready: true });
   S.timeLeft = questionSeconds(mode, q.level) * 1000; S.clockAt = performance.now(); S.lastTick = null;
   $('#next-question').disabled = false;
@@ -747,12 +736,12 @@ function setupQuestion() {
   $('#question-number').textContent = `${String(S.qi + 1).padStart(2, '0')} / ${String(S.questions.length).padStart(2, '0')}`;
   $('#level-tag').textContent = `${levelInfo(q.level).name} · ${q.topic} · ${q.pos} · ${frequencyLabel(q)}`;
   $('#word-slots').style.setProperty('--letter-count', q.word.length);
-  $('#blank-count').textContent = mode.id === 'dictation' ? '输入完整单词' : mode.id === 'spelling' ? `补${q.blanks.length}个字母` : '选一个单词';
-  if (mode.id === 'sentence') {
-    const [before, after] = q.context.split('____');
+  $('#blank-count').textContent = mode.id === 'collocation' ? q.task.focus : mode.id === 'dictation' ? '输入完整单词' : mode.id === 'spelling' ? `补${q.blanks.length}个字母` : '选一个单词';
+  if (mode.id === 'sentence' || mode.id === 'collocation') {
+    const [before, after] = (mode.id==='collocation'?q.task.cloze:q.context).split('____');
     const targetWord = Object.assign(document.createElement('span'), {
       className: 'target-word sentence-zh',
-      textContent: q.translation,
+      textContent: mode.id==='collocation'?q.task.meaning:q.translation,
     });
     const sentenceEn = Object.assign(document.createElement('span'), {
       className: 'sentence-en',
@@ -760,7 +749,7 @@ function setupQuestion() {
     });
     const targetGuide = Object.assign(document.createElement('span'), {
       className: 'target-guide',
-      textContent: '读句子 · 选出空格里的单词',
+      textContent: mode.id==='collocation'?(q.task.answer===q.word?'根据中文写出搭配中缺少的词':`练习词：${q.word} · 补全介词`):'读句子 · 选出空格里的单词',
     });
     const targetRow = Object.assign(document.createElement('div'), {
       className: 'target-word-row',
@@ -802,11 +791,14 @@ function setupQuestion() {
     if (S.E > .35) { const c = centerOf(card); fx.puff(c.x - c.w / 2, c.y + c.h / 2, 5); fx.puff(c.x + c.w / 2, c.y + c.h / 2, 5); audio.land(); }
     if (S.E > .22) cutin(S.qi === S.questions.length - 1 ? '最后一题！' : `第 ${S.qi + 1} 题`);
   }
-  if (saved.settings.autoSpeak) readQuestion();
+  if(S.kind==='daily'){if(S.restoreCheckpoint)restoreDailyQuestion();else studyTools.checkpoint(S);}
+  if (saved.settings.autoSpeak && S.phase==='answer') readQuestion();
   if (S.demo) scheduleDemo();
 }
 function renderChoices() {
-  const dictation = mode.id === 'dictation';
+  const dictation = ['dictation','collocation'].includes(mode.id);
+  $('#dictation-label').textContent=mode.id==='collocation'?'输入搭配中缺少的词':'听音后输入完整单词';
+  $('#dictation-help').textContent=mode.id==='collocation'?'先独立提取，再对照完整搭配。使用提示会记为需要巩固。':'点击扬声器可重听。接受常见英美拼写；可在设置中调整朗读速度。';
   $('#dictation-form').hidden = !dictation;
   $('#choices').hidden = dictation; $('#candidate-speech').hidden = dictation;
   $('.choice-note').hidden = dictation;
@@ -841,7 +833,7 @@ async function choose(button, automated = false) {
   const valid = () => S.run === run && S.screen === 'play' && activeQuestion() === q;
   const chosen = button.dataset.char;
   const correct = chosen === answerAt(q, step);
-  if (mode.id === 'dictation') { $('#dictation-input').disabled=true; button.disabled=true; }
+  if (['dictation','collocation'].includes(mode.id)) { $('#dictation-input').disabled=true; button.disabled=true; }
   const slot = $$('.word-cell')[q.blanks[step]];
   S.ready = false; $('#choices').classList.add('busy');
   audio.unlock(); audio.keyTap(S.combo);
@@ -880,21 +872,22 @@ async function choose(button, automated = false) {
         fx.ring(c.x, c.y, { color: '#fff', radius: 60, width: 7 });
         if (S.E > .5) { S.shake = Math.max(S.shake, 8); S.flash = Math.max(S.flash, .12); }
       }
-      button.disabled = mode.id !== 'dictation'; button.classList.add('rejected');
+      button.disabled = !['dictation','collocation'].includes(mode.id); button.classList.add('rejected');
       $('#feedback').textContent = `${copy.wrong} 再试一个答案吧。`;
       slot.classList.remove('bad'); void slot.offsetWidth; slot.classList.add('bad');
       $('#choices').classList.remove('busy'); S.ready = true;
-      if (mode.id === 'dictation') {
+      if (['dictation','collocation'].includes(mode.id)) {
         $('#dictation-input').disabled=false;
-        $('#dictation-diff').replaceChildren(...spellingFeedback($('#dictation-input').value, q.word).map(part => { const span=document.createElement('span'); span.className=part.wrong?'spelling-error':''; span.textContent=part.text; return span; }));
+        $('#dictation-diff').replaceChildren(...spellingFeedback($('#dictation-input').value, q.targetAnswer||q.word).map(part => { const span=document.createElement('span'); span.className=part.wrong?'spelling-error':''; span.textContent=part.text; return span; }));
         $('#dictation-diff').setAttribute('aria-label', '有标记的位置拼错或缺字母，可重听后修改');
         $('#feedback').textContent = '标记处拼错或缺字母，再听一次并修改。';
         $('#dictation-input').focus({preventScroll:true});
       } else if (S.stepMisses >= 2) hint();
+      if (S.kind==='daily')studyTools.checkpoint(S);
       if (S.demo) scheduleDemo();
     }
   } catch (err) {
-    if (valid()) { S.ready = true; if(mode.id==='dictation') { $('#dictation-input').disabled=false; button.disabled=false; } $('#choices').classList.remove('busy'); $('#feedback').textContent = '气泡没跟上，再点一次试试。'; }
+    if (valid()) { S.ready = true; if(['dictation','collocation'].includes(mode.id)) { $('#dictation-input').disabled=false; button.disabled=false; } $('#choices').classList.remove('busy'); $('#feedback').textContent = '气泡没跟上，再点一次试试。'; }
     console.error(err);
   }
 }
@@ -904,30 +897,32 @@ function hint() {
   if (mode.id !== 'spelling') {
     const q = activeQuestion();
     if (q?.word) {
-      $('#hint').textContent = `💡 首字母是「${q.word[0].toUpperCase()}」，共有 ${q.word.length} 个字母`;
+      $('#hint').textContent = `💡 首字母是「${(q.targetAnswer||q.word)[0].toUpperCase()}」，共有 ${(q.targetAnswer||q.word).length} 个字母`;
       $('#hint').hidden = false;
       $('#feedback').textContent = '用了提示也没关系，读懂意思最重要。';
     }
   }
+  if(S.kind==='daily')studyTools?.checkpoint(S);
   if (S.stepMisses >= 3) $$('.choice').find((b) => b.dataset.char === answerAt(activeQuestion(), S.step))?.classList.add('hint-choice');
 }
-function completeQuestion(skipped = false, timedOut = false) {
+function completeQuestion(skipped = false, timedOut = false, {restoring=false}={}) {
   speech.cancel();
   const q = activeQuestion();
   S.phase = 'explain'; S.ready = false;
   const firstTry = S.firstTry && !skipped;
-  if (mode.id === 'dictation') $('#dictation-input').blur?.();
-  if (!S.demo && S.kind !== 'placement' && !skipped) studyTools?.record(q);
-  S.results.push({ id: q.id, level: q.level, firstTry, completed: !skipped });
-  const scheduled = recordAnswer(saved, q, firstTry, { demo: S.demo, placement: S.kind === 'placement', now: Date.now() });
-  if (!S.demo && S.kind !== 'placement') {
+  if (['dictation','collocation'].includes(mode.id)) $('#dictation-input').blur?.();
+  const previousStat=saved.wordStats?.[q.id]?{...saved.wordStats[q.id]}:null;
+  S.results.push({ id: q.id, type:q.type,level: q.level, firstTry, completed: !skipped });
+  const scheduled = restoring?saved.wordStats?.[q.id]:recordAnswer(saved,q,firstTry,{demo:S.demo,placement:S.kind==='placement',now:Date.now()});
+  if(!restoring&&!S.demo&&S.kind!=='placement')studyTools?.record(q,{firstTry,skipped,previousStat,eventId:S.answerToken,index:S.qi});
+  if (!restoring && !S.demo && S.kind !== 'placement') {
     saved.stats.problems = (saved.stats.problems || 0) + (skipped ? 0 : 1);
     if (firstTry) saved.stats.firstTry = (saved.stats.firstTry || 0) + 1;
     if (S.kind === 'review' && firstTry) saved.stats.reviewSolved = (saved.stats.reviewSolved || 0) + 1;
     saved.stats.misses += S.misses - S.questionMisses;
     saved.stats.maxCombo = Math.max(saved.stats.maxCombo || 0, S.combo);
 
-    const thinkingMs = questionSeconds(mode, q.level) * 1000 - S.timeLeft;
+    const thinkingMs = S.questionThinkingMs||0;
     if (firstTry && thinkingMs <= 5000) saved.stats.flags.speedy = true;
     const energy = Math.round(10 ** S.energy);
     if (energy >= 1000) saved.stats.flags.energy = true;
@@ -946,13 +941,13 @@ function completeQuestion(skipped = false, timedOut = false) {
   const reach = audio.reach; audio.setReach(false);
   document.body.classList.remove('reach');
   if (!skipped) {
-    if (reach) audio.reachHit(S.E); else audio.clear(S.E);
-    celebrate(reach); drawStamp();
+    if (!restoring && reach) audio.reachHit(S.E); else audio.clear(S.E);
+    if(!restoring){celebrate(reach); drawStamp();}
   } else {
     S.combo = 0; updateEnergy();
     $$('.word-cell').forEach((el, i) => { el.textContent = partsFor(q)[i]; el.setAttribute('aria-label', partsFor(q)[i]); el.classList.remove('active', 'blank'); });
   }
-  $('#word-slots').setAttribute('aria-label', q.word);
+  $('#word-slots').setAttribute('aria-label', mode.id==='collocation'?q.collocation:q.word);
   $$('.pip')[S.qi].classList.replace('now', 'done');
   $$('.pip')[S.qi].classList.toggle('rainbow', S.E > .85);
   updateEnergy();
@@ -969,7 +964,11 @@ function completeQuestion(skipped = false, timedOut = false) {
   $('#example').textContent = q.context ? `${q.context.replace('____', q.word)}\n${q.translation}` : [q.definition, q.dictionaryMeanings].filter(Boolean).join('\n');
   $('#usage-card').hidden = !q.collocation;
   $('#collocation').textContent = q.collocation ? `${q.collocation} · ${q.collocationMeaning}` : '';
-  $('#use-case').textContent = q.useCase ? `G 类场景：${q.useCase}` : '';
+  $('#use-case').textContent = q.useCase ? (q.useCase.startsWith('G 类')?q.useCase:`G 类场景：${q.useCase}`) : '';
+  $('#skill-status').textContent=studyTools?.status(q)||'';
+  $('#other-senses').hidden=!q.otherMeanings;$('#other-senses-text').textContent=q.otherMeanings||'';
+  $('#word-family').hidden=!q.family?.length;$('#word-family-text').textContent=q.family?.join(' → ')||'';
+  $('#word-paraphrase').hidden=!q.paraphrase;$('#word-paraphrase-text').textContent=q.paraphrase?`${q.paraphrase.text} · ${q.paraphrase.scope}`:'';
   $('#word-source').textContent = q.source === 'ECDICT' ? (q.context ? 'ECDICT 词典释义 · 原创例句与搭配' : 'ECDICT 词典释义 · 该词暂未收录原创语境题') : '原创例句与搭配';
   const readLabel = q.context ? '朗读单词和例句' : q.definition ? '朗读单词和英文释义' : '朗读单词';
   $('#read-explanation').setAttribute('aria-label', readLabel);
@@ -983,16 +982,22 @@ function completeQuestion(skipped = false, timedOut = false) {
   if (!S.demo && saved.settings.autoSpeak) readExplanation();
   $('#next-question').textContent = S.qi === S.questions.length - 1 ? '这一轮完成啦 →' : '记住啦，下一题 →';
   if (!S.demo) $('#next-question').focus({ preventScroll: true });
-  if (S.qi === S.questions.length - 1 && !skipped) playFinale();
+  if(S.kind==='daily'&&!restoring)studyTools.checkpoint(S);
+  if (S.qi === S.questions.length - 1 && !skipped && !restoring) playFinale();
   else if (S.demo) later(() => demoNext(), 2200);
 }
 function nextQuestion() {
   if (S.screen !== 'play' || S.phase !== 'explain' || paused()) return;
+  if(S.kind==='daily'&&!studyTools.ensureToday()){home();$('#study-status').textContent='刚才的记录已保存。已进入新一天，请开始今天的计划。';return;}
   speech.cancel();
   if (S.qi + 1 >= S.questions.length) finish();
   else { S.qi += 1; setupQuestion(); }
 }
 function updateTimer() {
+  $('#question-timer').hidden=!S.timed;
+  $('#learning-time-note').hidden=Boolean(S.timed);
+  $('#learning-time-note').textContent=S.kind==='daily'?`第 ${S.dailyStage+1} 步 · ${S.dailyTitle} · 自主节奏`:'学习模式 · 不限时';
+  if(!S.timed)return;
   const active = S.phase === 'answer' && !speech.busy;
   const seconds = Math.ceil((S.timeLeft || 0) / 1000);
   $('#time-left').textContent = `${seconds}`;
@@ -1006,7 +1011,9 @@ function tickTimer(t) {
   S.clockAt = t;
   if (S.screen !== 'play') return;
   if (!paused() && !speech.busy) S.playMs += Math.max(0, elapsed);
-  const active = S.phase === 'answer' && S.ready && !paused() && !speech.busy;
+  const thinking=S.phase==='answer'&&S.ready&&!paused()&&!speech.busy;
+  if(thinking)S.questionThinkingMs=(S.questionThinkingMs||0)+Math.max(0,elapsed);
+  const active = S.timed && thinking;
   S.timeLeft = countdown(S.timeLeft, elapsed, active);
   updateTimer();
   if (!active) return;
@@ -1169,6 +1176,7 @@ async function playFinale() {
   if (S.demo) later(demoNext, 800);
 }
 function finish() {
+  if(S.kind==='daily'){finishDailyStage();return;}
   const placement = S.kind === 'placement';
   if (placement) saved.recommended = recommendedLevel(S.results, mode);
   if (!S.demo) {
@@ -1179,7 +1187,7 @@ function finish() {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         day: todayStr,
         at: Date.now(),
-        score: 100,
+        score: Math.round(100*S.results.filter(r=>r.firstTry).length/S.questions.length),
         solved: S.results.filter((r) => r.completed).length,
         misses: S.misses,
         firstTry: S.results.filter((r) => r.firstTry).length,
@@ -1221,10 +1229,10 @@ function finish() {
   audio.setReach(false);
   $('#result-eyebrow').textContent = S.demo ? '演示完成 · 没有写入学习记录' : placement ? '找到起点，快乐出发' : '泡泡小队，为你欢呼';
   $('#result-title').textContent = placement ? `从「${levelInfo(saved.recommended).name}」\n开始刚刚好。` : copy.resultTitle;
-  $('#result-score').textContent = placement ? levelInfo(saved.recommended).name : '100';
-  $('#score-label').textContent = placement ? '推荐起点' : '完成分';
+  $('#result-score').textContent = placement ? levelInfo(saved.recommended).name : `${S.results.filter(r=>r.firstTry).length} / ${S.questions.length}`;
+  $('#score-label').textContent = placement ? '推荐起点' : '首答正确';
   const first = S.results.filter((r) => r.firstTry).length;
-  $('#result-summary').textContent = placement ? '这不是考试分数，只是一个起点建议。你仍然可以自由选择任何难度。' : `完成 ${S.questions.length} 道题，就值得满分庆祝。\n其中 ${first} 道没有用提示、一次就填对了。`;
+  $('#result-summary').textContent = placement ? '这不是考试分数，只是一个起点建议。你仍然可以自由选择任何难度。' : `本轮 ${first} 道独立答对，${S.questions.length-first} 道需要巩固。\n完成练习值得鼓励，隔天再检验是否记得。`;
   $('#result-details').innerHTML = `<div class="result-detail"><b>${S.results.length}</b><span>完成题目</span></div><div class="result-detail"><b>${S.peak}</b><span>最高连击</span></div><div class="result-detail"><b>${S.energy ? displayEnergy(S.energy) : 0}</b><span>快乐能量</span></div>`;
 
   const rQuests = $('#r-quests');
@@ -1257,7 +1265,7 @@ function finish() {
   $('#result-title').focus({ preventScroll: true });
   later(() => audio.stopMusic(), 4000);
 
-  if (S.earnedTrophies.length) later(showEarnedTrophies, 1200);
+  // Earned trophies remain available from 我的; never interrupt study.
 
   if (S.demo) later(() => { if (paused()) return demoReturn(); home(); }, 5500);
 }
@@ -1268,7 +1276,7 @@ function scheduleDemo() {
     if (speech.busy) { later(scheduleDemo, 350); return; }
     if (!S.demo || !S.ready) return;
     const q = activeQuestion(); const correct = answerAt(q, S.step);
-    if (mode.id === 'dictation') { const button=$('#dictation-submit'); button.dataset.char=correct; $('#dictation-input').value=correct; choose(button,true); return; }
+    if (['dictation','collocation'].includes(mode.id)) { const button=$('#dictation-submit'); button.dataset.char=correct; $('#dictation-input').value=correct; choose(button,true); return; }
     const buttons = $$('.choice').filter((b) => !b.disabled);
     const miss = S.qi === 1 && S.step === 0 && !S.demoSlipped;
     if (miss) S.demoSlipped = true;
@@ -1328,6 +1336,7 @@ function renderWordbook() {
   $('#wordbook-list').innerHTML = result.items.length ? result.items.map(q => `<li class="wordbook-item">
     <div class="wordbook-word"><strong>${escapeText(q.word)}</strong><span>${escapeText(q.phonetic ? `/${q.phonetic}/` : '')}</span><button type="button" data-book-speech="${q.word}" aria-label="朗读 ${q.word}">听</button></div>
     <p>${escapeText(q.pos)} ${escapeText(q.meaning)}</p>
+    <p class="wordbook-skills">${escapeText(studyTools?.status(q)||'')}</p>
     ${q.collocation ? `<p class="wordbook-collocation">${escapeText(q.collocation)} · ${escapeText(q.collocationMeaning)}</p>` : ''}
     <small>${escapeText(levelInfo(q.level).name)} · ${escapeText(q.topic)} · ${escapeText(frequencyLabel(q))} · ${escapeText(q.source)}</small>
   </li>`).join('') : '<li class="wordbook-empty">没有匹配词汇，请换个关键词或筛选条件。</li>';
@@ -1525,7 +1534,6 @@ $('#hammer-yes')?.addEventListener('click', () => {
   }
   pendingHammer = null;
   $('#hammer-dialog')?.close();
-  showEarnedTrophies();
   checkLoginBonus();
 });
 $('#hammer-no')?.addEventListener('click', () => {
@@ -1575,6 +1583,7 @@ $('#open-calendar')?.addEventListener('click', () => {
   playClickSound('bubble');
   audio.unlock();
   renderCalendar();
+  checkHammer(true);if($('#hammer-dialog')?.open)return;
   $('#calendar-dialog')?.showModal();
 });
 $('#close-calendar')?.addEventListener('click', () => {
@@ -1657,6 +1666,7 @@ $('#result-home').addEventListener('click', () => {
   home();
 });
 $('#result-start').addEventListener('click', () => {
+  if(S.kind==='daily'){studyTools.nextStage();return;}
   playClickSound('primary');
   start(S.kind === 'daily' ? 'daily' : S.demo && !saved.recommended ? 'placement' : 'level', S.kind === 'placement' ? saved.recommended : S.level);
 });
@@ -1798,6 +1808,7 @@ addEventListener('keydown', (e) => {
 document.addEventListener('visibilitychange', () => {
   S.clockAt = performance.now();
   if (document.hidden) {
+    if(S.kind==='daily'&&S.screen==='play')studyTools?.checkpoint(S);
     speech.cancel();
     audio.stopMusic();
   } else if (saved.settings?.sound && !audio.muted) {
@@ -1893,17 +1904,57 @@ applySettings(); refreshHome(); showScreen('home'); startClock();
 if (saved.settings?.sound && !audio.muted) {
   startHomeMusic();
 }
-if (params.has('demo')) start('demo');
+// Demo starts after study tools have initialised.
 
 
 $('#dictation-form').addEventListener('submit', e => {
-  e.preventDefault(); if (mode.id !== 'dictation' || !S.ready || S.phase !== 'answer' || $('#dictation-input').dataset.composing === 'true') return;
+  e.preventDefault(); if (!['dictation','collocation'].includes(mode.id) || !S.ready || S.phase !== 'answer' || $('#dictation-input').dataset.composing === 'true') return;
   const value = normalizeDictation($('#dictation-input').value);
   if (!/^[a-z]{1,40}$/.test(value)) { $('#feedback').textContent='请输入完整英文单词（字母），再提交。'; return; }
-  const button=$('#dictation-submit'); button.dataset.char=dictationMatches(value,activeQuestion().word)?activeQuestion().word:value; return choose(button);
+  const button=$('#dictation-submit'); button.dataset.char=dictationMatches(value,activeQuestion().targetAnswer||activeQuestion().word)?(activeQuestion().targetAnswer||activeQuestion().word):value; return choose(button);
 });
-studyTools = initStudyTools({storage, start, onPause:()=>{speech.cancel(); audio.stopMusic();}, onResume:()=>{if(S.screen==='home') startHomeMusic();}});
+studyTools = initStudyTools({storage, start, launchDaily, goHome:home, practiceQuestion:(modeId,id)=>{setAudienceMode(modeId,false);const q=getMode(modeId).questions.find(q=>q.id===id);if(q)start('manual',q.level,[q]);}, onPause:()=>{speech.cancel(); audio.stopMusic();}, onResume:()=>{if(S.screen==='home') startHomeMusic();}});
 studyTools.refresh(mode,saved,selectedTopic);
 
 $('#dictation-input').addEventListener('compositionstart',()=>{$('#dictation-input').dataset.composing='true';});
 $('#dictation-input').addEventListener('compositionend',()=>{$('#dictation-input').dataset.composing='false';});
+
+if(params.has('demo'))start('demo');
+$('#start-challenge').addEventListener('click',()=>start('challenge'));
+$('#dictation-input').addEventListener('input',()=>{if(S.kind==='daily')studyTools.checkpoint(S);});
+addEventListener('pagehide',()=>{if(S.kind==='daily'&&S.screen==='play')studyTools.checkpoint(S);});
+
+function launchDaily({questions,index,checkpoint,completed,stage,title}) {
+  document.body.dataset.studyKind='daily';fx.parts=[];fxBack.parts=[];
+  const original=S.dailyModeBefore||mode.id;
+  cancelRun();
+  Object.assign(S,{questions,kind:'daily',dailyModeBefore:original,dailyStage:stage,dailyTitle:title,level:questions[index].level,
+    qi:index,step:0,combo:0,peak:0,misses:checkpoint?.misses||0,playMs:checkpoint?.playMs||0,energy:0,shownEnergy:0,energyUnit:0,E:.08,
+    results:completed.filter(r=>questions.findIndex(q=>q.id===r.qid)<index).map(r=>({id:r.qid,type:r.qid.split(':')[0],level:questions.find(q=>q.id===r.qid)?.level||1,firstTry:r.firstTry,completed:!r.skipped})),
+    timed:false,demo:false,phase:'answer',restoreCheckpoint:checkpoint});
+  const already=completed.find(r=>r.qid===questions[index].id);
+  if(already)S.restoreCheckpoint={...(checkpoint||{}),phase:'explain',firstTry:already.firstTry,skipped:already.skipped};
+  $('#open-settings').disabled=false;$('#play-title').textContent=`第 ${stage+1} 步 · ${title}`;$('#demo-banner').hidden=true;$('#exit-game').hidden=false;
+  $('#pips').innerHTML=questions.map(()=>'<span class="pip"></span>').join('');
+  showScreen('play');setupQuestion();
+}
+function restoreDailyQuestion() {
+  const c=S.restoreCheckpoint;S.restoreCheckpoint=null;const q=activeQuestion();
+  S.firstTry=c.firstTry!==false;S.step=Math.min(c.step||0,q.blanks.length-1);S.stepMisses=c.stepMisses||0;S.misses=c.misses||0;S.questionMisses=c.questionMisses||0;S.questionThinkingMs=c.thinkingMs||0;
+  for(let i=0;i<S.step;i++){const slot=$$('.word-cell')[q.blanks[i]];slot.textContent=answerAt(q,i);slot.classList.remove('blank');slot.classList.add('ok');}
+  renderChoices();$('#dictation-input').value=c.typed||'';
+  if(c.phase==='explain'){ $$('.word-cell').forEach((slot,i)=>{slot.textContent=partsFor(q)[i];slot.classList.remove('blank');}); completeQuestion(c.skipped===true,false,{restoring:true}); }
+  else {$('#feedback').textContent='已恢复本题，之前的提示和错答记录已保留。';updateEnergy();}
+}
+function finishDailyStage() {
+  const result=studyTools.finishStage(S.results,S.playMs);
+  showScreen('result');S.ready=false;
+  $('#result-eyebrow').textContent=`第 ${S.dailyStage+1} 步已完成`;
+  $('#result-title').textContent=result?.title||S.dailyTitle;
+  const first=S.results.filter(r=>r.firstTry).length;
+  $('#result-score').textContent=`${first} / ${S.results.length}`;$('#score-label').textContent='首答正确';
+  $('#result-summary').textContent=`${S.results.length-first} 道需要巩固。新词额度和各项技能分别记录。`;
+  $('#result-details').innerHTML=S.results.filter(r=>!r.firstTry).map(r=>`<div class="result-detail"><b>${escapeText(S.questions.find(q=>q.id===r.id)?.word||'')}</b><span>需要复习</span></div>`).join('')||'<p>这一步全部独立答对；跨日复习后再判断稳定程度。</p>';
+  $('#r-quests').hidden=true;$('#result-start').textContent='继续下一步 →';$('#result-review').hidden=true;$('#result-home').textContent='先休息，稍后继续';
+  audio.stopMusic();$('#result-title').focus({preventScroll:true});
+}

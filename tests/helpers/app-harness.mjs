@@ -1,3 +1,4 @@
+import { initStudyTools as realStudyTools } from '../../js/study-tools.js';
 import { normalizeDictation, spellingFeedback, dictationMatches } from '../../js/study.js';
 import fs from 'node:fs';
 import vm from 'node:vm';
@@ -17,7 +18,7 @@ const source = fs.readFileSync(new URL('../../js/main.js', import.meta.url), 'ut
   .replace(/^import .*;\n/gm, '');
 const noop = () => {};
 
-export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), saves = {}, speechOptions = {}, query, storageBlocked = false } = {}) {
+export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), saves = {}, speechOptions = {}, query, storageBlocked = false, extraRecords = {} } = {}) {
   let dateMs = date.getTime();
   let clock = 0;
   const frames = [];
@@ -37,8 +38,8 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     return {
       dataset: {}, classList: classes(), style: { setProperty(name, value) { this[name] = value; } },
       hidden: false, open: false, disabled: false, value: '', children: [],
-      focus: noop, attrs: {}, setAttribute(name, value) { this.attrs[name] = value; }, animate: noop, remove: noop,
-      append: noop, replaceChildren(...children) { this.children = children; this.textContent = children.map(child => child.textContent || '').join(''); }, querySelectorAll: () => [],
+      focus: noop, blur:noop, scrollIntoView:noop, attrs: {}, setAttribute(name, value) { this.attrs[name] = value; }, animate: noop, remove: noop,
+      append: noop, replaceChildren(...children) { this.children = children; this.textContent = children.map(child => child.textContent || '').join(''); }, querySelector: selector => $(selector), querySelectorAll: () => [],
       getBoundingClientRect: () => ({ left: 0, top: 0, right: 100, bottom: 100, width: 100, height: 100 }),
       addEventListener(type, fn) { this[type] = fn; },
       showModal() { this.open = true; }, close() { this.open = false; },
@@ -61,15 +62,16 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
   };
   const cells = Array.from({ length: 4 }, element);
   const pips = Array.from({ length: 8 }, element);
-  const modePills = ['meaning', 'spelling', 'dictation', 'sentence'].map(id => Object.assign(element(), { dataset: { mode: id } }));
+  const modePills = ['meaning', 'spelling', 'dictation', 'collocation', 'sentence'].map(id => Object.assign(element(), { dataset: { mode: id } }));
   const $$ = selector => selector === '.word-cell' ? cells : selector === '.pip' ? pips
     : selector === '.choice' ? $('#choices').children : selector === '.mode-pill' ? modePills : [];
   const savedData = new Map(Object.values(modes.MODES).map(mode => {
     const save = saves[mode.id] || storage.freshSave(mode);
     return [modes.saveKey(mode), JSON.stringify({ ...save, settings: { ...save.settings, motion: false } })];
   }));
+  for(const [key,value]of Object.entries(extraRecords))savedData.set(key,typeof value==='string'?value:JSON.stringify(value));
   let reloaded = false;
-  const localStorage = { getItem: key => { if (storageBlocked) throw Error('blocked'); return savedData.get(key) || null; }, setItem: (key, value) => savedData.set(key, String(value)),
+  const localStorage = { getItem: key => { if (storageBlocked) throw Error('blocked'); return savedData.get(key) || null; }, setItem: (key, value) => {if(storageBlocked)throw Error('blocked');savedData.set(key,String(value));},
     removeItem: key => savedData.delete(key), clear: () => savedData.clear(),
     get length() { return savedData.size; }, key: index => [...savedData.keys()][index] ?? null,
   };
@@ -91,7 +93,7 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     }); }
   }
   const context = vm.createContext({
-    normalizeDictation, spellingFeedback, dictationMatches, initStudyTools: () => ({refresh(){},record(){},round(){return []}}), ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, searchWordbook,
+    normalizeDictation, spellingFeedback, dictationMatches, initStudyTools: options => realStudyTools({...options,document:context.document,window:context.window,now:()=>dateMs,elapsed:()=>clock}), ...modes, ...idioms, ...storage, ...quests, ...trophies, ...choreography, ...timer, searchWordbook,
     dayKey: (d = new FakeDate()) => storage.dayKey(d),
     currentStreak: (history, nc, today = new FakeDate()) => storage.currentStreak(history, nc, today),
     hammerOffer: (calendar, history, today = new FakeDate()) => storage.hammerOffer(calendar, history, today),
@@ -99,7 +101,7 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     Date: FakeDate, URL, URLSearchParams, console, matchMedia: () => ({ matches: true }),
     location: { search: query ?? `?mode=${mode}`, href: `http://localhost/?mode=${mode}`, reload: () => { reloaded = true; } },
     history: { replaceState: noop }, window: { localStorage, scrollTo: noop },
-    document: { body, hidden: false, querySelector: $, querySelectorAll: $$, getAnimations: () => [], addEventListener: (type, fn) => { documentEvents[type] = fn; }, createElement: element, createTextNode: text => ({ textContent: text }) },
+    document: { body, hidden: false, querySelector: $, querySelectorAll: $$, getAnimations: () => [], addEventListener: (type, fn) => { const previous=documentEvents[type];documentEvents[type]=previous?()=>{previous();fn();}:fn; }, createElement: element, createTextNode: text => ({ textContent: text }) },
     AudioEngine: Audio, SpeechReader: TestSpeechReader, FX, Backdrop: class {}, mountSofties: () => [], softieSVG: () => '',
     bounce: noop, bubbleHit: async () => {}, startClock: noop,
     onFrame: fn => { frames.push(fn); return noop; }, centerOf: () => ({ x: 0, y: 0, w: 0, h: 0 }),
@@ -110,7 +112,7 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     clearTimeout: id => timers.delete(id),
   });
   vm.runInContext(source, context);
-  const app = vm.runInContext('({ start, home, setAudienceMode, choose, nextQuestion, showDayLog, speech, tickTimer, readQuestion, readExplanation, get scene() { return S; }, get saved() { return saved; } })', context);
+  const app = vm.runInContext('({ start, home, setAudienceMode, choose, nextQuestion, showDayLog, speech, tickTimer, readQuestion, readExplanation, get tools(){return studyTools;}, get scene() { return S; }, get saved() { return saved; } })', context);
   async function advance(ms) {
     clock += ms; dateMs += ms;
     frames.forEach(fn => fn(ms / 1000, clock));
@@ -123,23 +125,24 @@ export function createApp({ mode = 'meaning', date = new Date(2026, 8, 30, 12), 
     await advance(thinkingMs);
     if (wrong) {
       const q = app.scene.questions[app.scene.qi];
-      const b = app.scene.questions[0].type === 'dictation' ? $('#dictation-submit') : $('#choices').children.find(b => b.dataset.char !== idioms.answerAt(q, app.scene.step));
-      if(q.type === 'dictation') { b.dataset.char='wrong'; $('#dictation-input').value='wrong'; }
+      const b = ['dictation','collocation'].includes(app.scene.questions[0].type) ? $('#dictation-submit') : $('#choices').children.find(b => b.dataset.char !== idioms.answerAt(q, app.scene.step));
+      if(['dictation','collocation'].includes(q.type)) { b.dataset.char='wrong'; $('#dictation-input').value='wrong'; }
       await app.choose(b);
     }
     while (app.scene.phase === 'answer') {
       const q = app.scene.questions[app.scene.qi];
-      const b = q.type === 'dictation' ? $('#dictation-submit') : $('#choices').children.find(b => b.dataset.char === idioms.answerAt(q, app.scene.step));
-      if(q.type === 'dictation') { b.dataset.char=q.word; $('#dictation-input').value=q.word; }
+      const b = ['dictation','collocation'].includes(q.type) ? $('#dictation-submit') : $('#choices').children.find(b => b.dataset.char === idioms.answerAt(q, app.scene.step));
+      if(['dictation','collocation'].includes(q.type)) { b.dataset.char=idioms.answerAt(q,app.scene.step); $('#dictation-input').value=b.dataset.char; }
       await app.choose(b, app.scene.demo);
     }
     await advance(0);
   }
+  const records=()=>Object.fromEntries(savedData);
   async function round(options = {}) {
     while (app.scene.screen === 'play') { await answer(options); app.nextQuestion(); }
   }
   return {
-    app, $, advance, answer, round, cells, musicGains, document: context.document, documentEvents, localStorage, get reloaded() { return reloaded; },
+    app, $, advance, records, setStorageBlocked:value=>{storageBlocked=value;}, answer, round, cells, musicGains, document: context.document, documentEvents, localStorage, get reloaded() { return reloaded; },
     setDate: next => { dateMs = next.getTime(); },
     stored: id => JSON.parse(localStorage.getItem(modes.saveKey(modes.MODES[id]))),
   };

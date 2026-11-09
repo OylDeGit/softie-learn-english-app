@@ -23,13 +23,13 @@ export function learningWeight(q, stats = {}, now = Date.now()) {
   const stat = stats[q.id];
   if (!stat) return frequencyWeight(q);
   const overdue = Math.min(3, Math.max(0, (now - (stat.dueAt || now)) / DAY));
-  return frequencyWeight(q) * (1 + Math.min(3, stat.lapses || 0) * .75 + overdue * .25) / (1 + (stat.streak || 0) * .5);
+  return (1 + Math.min(4, stat.lapses || 0) * 2 + overdue + frequencyWeight(q) * .2) / (1 + (stat.streak || 0) * .5);
 }
-export function reviewPool(mode, save, { topic = '', now = Date.now() } = {}) {
+export function reviewPool(mode, save, { topic = '', now = Date.now(), autoOnly = false } = {}) {
   const mistakes = new Set(save.review || []);
   const learned = new Set(save.learned || []);
   return mode.questions.filter(q => (!topic || q.topic === topic) &&
-    (mistakes.has(q.id) || (learned.has(q.id) && isDue(save.wordStats?.[q.id], now))));
+    ((!autoOnly && mistakes.has(q.id)) || ((learned.has(q.id)||mistakes.has(q.id)) && isDue(save.wordStats?.[q.id], now))));
 }
 export function selectReviewRound(mode, save, { topic = '', strategy = 'smart', count = mode.rules.roundSize, now = Date.now(), rng = Math.random } = {}) {
   const pool = reviewPool(mode, save, { topic, now });

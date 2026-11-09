@@ -24,11 +24,11 @@ test('whole-word cards keep the target masked until answer; spelling uses its ac
     assert.equal(f.cells.length, mode.id === 'spelling' ? q.word.length : 1);
     if (mode.id !== 'spelling') {
       assert.equal(f.cells[0].textContent, '?');
-      assert.ok(!f.$('#context').textContent.includes(q.word));
+      assert.ok(!new RegExp(`\\b${q.targetAnswer||q.word}\\b`,'i').test(f.$('#context').textContent));
       assert.ok(!f.$('#word-slots').attrs['aria-label'].includes(q.word));
     }
-    if(mode.id === 'dictation') { assert.equal(f.$('#choices').hidden,true); assert.equal(f.$('#dictation-form').hidden,false); } else assert.ok(f.$('#choices').children.some(button => button.dataset.char === answerAt(q, 0)));
-    await f.answer(); assert.equal(f.cells.map(cell => cell.textContent).join(''), q.word);
+    if(['dictation','collocation'].includes(mode.id)) { assert.equal(f.$('#choices').hidden,true); assert.equal(f.$('#dictation-form').hidden,false); } else assert.ok(f.$('#choices').children.some(button => button.dataset.char === answerAt(q, 0)));
+    await f.answer(); assert.equal(f.cells.map(cell => cell.textContent).join(''), q.targetAnswer||q.word);
   }
 });
 
@@ -36,7 +36,7 @@ test('timeout fills every letter of a long word without undefined and sends it t
   const mode = MODES.spelling; const save = freshSave(mode);
   const q = mode.questions.find(q => q.word === 'infrastructure');
   save.review = [q.id];
-  const f = createApp({ mode: mode.id, saves: { spelling: save } }); f.app.start('review');
+  const f = createApp({ mode: mode.id, saves: { spelling: save } }); f.app.start('challenge',3,[q]);
   assert.equal(f.cells.length, 14);
   await f.advance(31000);
   assert.equal(f.app.scene.phase, 'explain');
