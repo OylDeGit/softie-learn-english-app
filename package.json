@@ -1,12 +1,13 @@
 {
   "name": "softie-learn-english-app",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "面向雅思 G 类备考的词汇与搭配泡泡练习",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "python3 -m http.server 8016 --bind 127.0.0.1",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "prepare-release": "node scripts/prepare-release.mjs"
   },
   "engines": {
     "node": ">=20"

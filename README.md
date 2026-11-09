@@ -54,6 +54,8 @@ npm run dev
 npm test
 ```
 
+发布代码更新前运行 `npm run prepare-release`，按包版本刷新模块映射和样式 URL，避免旧缓存与新页面混用。生成的静态文件直接提交即可，无需服务器构建。
+
 打开 `http://127.0.0.1:8016`，不要直接双击 HTML。GitHub Pages 从 `master` 分支根目录发布，保留 `.nojekyll`。
 
 核心模块：`js/skills.js` 记录维度与跨日证据；`js/curriculum.js` 安排四步与断点；`js/study-tools.js` 提供导航、场景和备份界面。现有 `softie-ielts-gt:` 存档继续使用，新增技能键为 `skills:v2`、断点键为 `daily-session:v1`；旧启蒙/成语记录不受影响。
